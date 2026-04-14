@@ -2,8 +2,9 @@ name: Deployment Pipeline
 
 on:
   push:
-    branches:
-      - main
+    branches: ["*"]
+  pull_request:
+    branches: ["main"]
 
 jobs:
   database-sync:
@@ -42,5 +43,5 @@ jobs:
           vercel-token: ${{ secrets.VERCEL_TOKEN }}
           vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
           vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
-          vercel-args: '--prod'
+          vercel-args: ${{ github.ref == 'refs/heads/main' && '--prod' || '' }}
           working-directory: ./
