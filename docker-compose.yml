@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    restart: always
+    environment:
+      POSTGRES_USER: veco
+      POSTGRES_PASSWORD: veco_password
+      POSTGRES_DB: veco_db
+    ports:
+      - "5489:5432"
+    volumes:
+      - veco_pgdata:/var/lib/postgresql/data
+
+volumes:
+  veco_pgdata:

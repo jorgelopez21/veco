@@ -1,0 +1,16 @@
+node_modules
+.next
+.git
+.github
+*.log
+.env
+.env.local
+.env*.local
+README.md
+Dockerfile
+.dockerignore
+**/apps/finance/**
+WhatsApp Image*
+implementation_plan*
+test-env.js
+tsconfig.tsbuildinfo
