@@ -1,87 +1,97 @@
-# 📊 VECO Finance Manager
+# 🇨🇴 VECO — Vehículos Eléctricos de Colombia
 
-VECO es una aplicación moderna de gestión financiera personal construida con **Next.js 15**, **Prisma** y **Tailwind CSS**. Permite rastrear ingresos, gastos, deudas y específicamente optimizado para el seguimiento de recargas de vehículos eléctricos (EV).
+![VECO Logo](public/logo-veco-colombia.png)
 
-## 🚀 Despliegue Local
+> **Veco** is a premium, open-source personal finance tracker specialized for Electric Vehicle (EV) owners in Colombia. Manage your charging expenses, track battery health, and master your financial flow with an interface designed for the future of mobility.
 
-### Requisitos Previos
-- Node.js 18+ instalado
-- Instancia de PostgreSQL (Local o en la nube como Neon.tech)
-- Cuenta en Google Cloud Console (Opcional para desarrollo local)
-- Cloudflare Turnstile (Opcional para desarrollo local)
+---
 
-### 1. Clonar e Instalar
-```bash
-git clone <url-del-repo>
-cd apps/veco
-npm install
-```
+## ✨ Features
 
-### 2. Configuración de Variables de Entorno
-Crea un archivo `.env` en la raíz de `apps/veco` basado en el siguiente template:
+- 🔋 **EV Optimized**: Specialized modules for tracking charging sessions (kWh, SOC, Odometer).
+- ⚡ **Neon Infrastructure**: Powered by Neon Postgres for instant branching and serverless scalability.
+- 🔐 **Secure Auth**: Seamless Google OAuth integration and Row Level Security (RLS).
+- 🧹 **Self-Managing**: Integrated garbage collection that maintains a 50-user capacity for zero-cost demo hosting.
+- 🇨🇴 **Local First**: Built with the Colombian market in mind (COP currency, energy charging types, local branding).
+- 📱 **Mobile Ready**: PWA-ready design for recording expenses on the go, directly at the charging station.
 
-```env
-# Database
-DATABASE_URL="postgresql://user:password@localhost:5432/veco"
-DIRECT_URL="postgresql://user:password@localhost:5432/veco" # Requerido para migraciones en Neon
+## 🛠️ Technology Stack
 
-# NextAuth (Autenticación)
-AUTH_SECRET="tu_secreto_generado" # Genera con: openssl rand -base64 32
-AUTH_URL="http://localhost:3000"
+- **Framework**: [Next.js 15+](https://nextjs.org/) (App Router)
+- **Database**: [PostgreSQL (Neon)](https://neon.tech/)
+- **ORM**: [Prisma](https://www.prisma.io/)
+- **Auth**: [Auth.js (NextAuth v5)](https://authjs.dev/)
+- **Styling**: Tailwind CSS + Custom Neo-Glassmorphism UI
+- **Deployment**: Vercel + GitHub Actions
 
-# Google OAuth
-AUTH_GOOGLE_ID="tu_client_id.apps.googleusercontent.com"
-AUTH_GOOGLE_SECRET="tu_client_secret"
+---
 
-# Cloudflare Turnstile (Si se dejan vacíos, se desactivan automáticamente en local)
-NEXT_PUBLIC_TURNSTILE_SITE_KEY=""
-TURNSTILE_SECRET_KEY=""
-```
+## 🚀 Getting Started Locally
 
-> [!IMPORTANT]
-> **Bypass de Desarrollador (Solo en Local/Dev):** En ambiente de desarrollo (`NODE_ENV=development`), verás una sección naranja en el login que permite iniciar sesión sin Google OAuth. Este bypass es dinámico: si ya existe un usuario en tu base de datos local (ej. después de ejecutar el script SQL), el sistema te logueará automáticamente con el ID de ese usuario para que veas tus datos. Si la DB está vacía, usará un perfil genérico.
+### Prerequisites
 
-> [!WARNING]
-> **Cloud Run y Turnstile:** Si obtienes un error de conexión en el widget de Turnstile tras desplegar en Cloud Run, verifica que la URL autogenerada del servicio (`https://veco-app-....a.run.app`) esté registrada en el panel de Cloudflare. Turnstile bloquea el widget si no reconoce el hostname exacto.
+- Node.js 20+
+- A [Neon.tech](https://neon.tech) account (or local Postgres)
+- Google Cloud Console Project (for OAuth)
 
-### 3. Inicializar Base de Datos
-Tienes dos opciones para preparar la base de datos:
+### Installation
 
-**Opción A: Usando Prisma (Recomendado)**
-```bash
-npx prisma migrate dev
-```
+1. **Clone the repository:**
+   ```bash
+   git clone https://github.com/jorgelopez21/veco.git
+   cd veco
+   ```
 
-**Opción B: Usando SQL Manual**
-Si prefieres no usar el CLI de Prisma inicialmente, puedes ejecutar el script localizado en `prisma/structure.sql` directamente en tu cliente PostgreSQL. Este script incluye **datos de ejemplo** (categorías y cuentas) para facilitar el inicio rápido.
+2. **Install dependencies:**
+   ```bash
+   npm install
+   ```
 
-### 4. Ejecutar Aplicación
-```bash
-npm run dev
-```
-La aplicación estará disponible en [http://localhost:3000](http://localhost:3000).
+3. **Environment Setup:**
+   Create a `.env` file based on your credentials:
+   ```env
+   DATABASE_URL="postgresql://..."
+   DIRECT_URL="postgresql://..."
+   NEXTAUTH_SECRET="your-secret"
+   GOOGLE_CLIENT_ID="your-google-id"
+   GOOGLE_CLIENT_SECRET="your-google-secret"
+   NEXT_PUBLIC_ALLOW_DEV_BYPASS="true"
+   ```
 
-## 🗄️ Estructura de la Base de Datos
-La aplicación utiliza PostgreSQL. Los modelos principales son:
-- **User**: Gestión de perfiles y OAuth.
-- **BankAccount**: Cuentas bancarias, efectivo y deudas (Tarjetas de crédito).
-- **Transaction**: Registro de movimientos de dinero.
-- **Category**: Clasificación de gastos e ingresos.
-- **EV Stats**: Soporte especial para descripciones con prefijo `EV:` para cálculos de eficiencia energética.
+4. **Initialize Database:**
+   ```bash
+   npx prisma db push
+   ```
 
-## 🔐 Autenticación y Seguridad
-- **Auth.js (NextAuth)**: Implementa Google OAuth para un inicio de sesión seguro.
-- **Turnstile**: Protege la página de login contra bots.
-- **Middleware**: Todas las rutas de `/finance` están protegidas y requieren sesión activa.
+5. **Run the development server:**
+   ```bash
+   npm run dev
+   ```
 
-## 🐳 Despliegue con Docker
-El proyecto incluye un `Dockerfile` optimizado:
-```bash
-docker build -t veco-app .
-docker run -p 3000:3000 --env-file .env veco-app
-```
+Visit `http://localhost:3000` to see your local instance.
 
-## 🛠️ Desarrollo
-- **Linting**: `npm run lint`
-- **Formateo**: `npx prettier --write .`
-- **Pruebas**: El proyecto utiliza Vitest para pruebas unitarias.
+---
+
+## 🛡️ Demo Constraints
+
+This demo is configured for **low-maintenance public release**:
+- **Capacity**: Auto-limited to 50 active users.
+- **Cleanup**: Users inactive for more than 30 days are automatically removed to free up database space.
+- **Developer Bypass**: In development mode, a secure bypass is provided for rapid testing without OAuth.
+
+---
+
+## 🤝 Contributing
+
+Contributions are welcome! If you have ideas for improving the EV charging analytics or general UI, feel free to open a PR.
+
+---
+
+## 👨‍💻 Author
+
+**Jorge Lopez** — *Senior DevOps Engineer*
+[minube.dev](https://minube.dev)
+
+---
+
+*Built with precision in Colombia 🇨🇴*
