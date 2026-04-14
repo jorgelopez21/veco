@@ -29,7 +29,7 @@ async function main() {
   // Since we use Auth, we can't easily predict the user ID before login.
   // I will create a script that upserts a demo user and adds categories to them.
 
-  const demoEmail = "demo@example.com";
+  const demoEmail = "contacto@minube.dev";
 
   const user = await prisma.user.upsert({
     where: { email: demoEmail },

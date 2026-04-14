@@ -194,6 +194,17 @@ function LoginContent() {
           </div>
         </NeoCard>
       </div>
+      
+      <div className="mt-8 flex justify-center animate-in fade-in slide-in-from-bottom-2 duration-1000 delay-500">
+        <a 
+          href="https://github.com/jorgelopez21/veco"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-[10px] font-black uppercase tracking-[0.3em] text-white/20 hover:text-primary transition-all select-none bg-white/5 px-4 py-1.5 rounded-full border border-white/5"
+        >
+          Veco v0.4.0
+        </a>
+      </div>
     </div>
   );
 }
