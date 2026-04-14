@@ -1,9 +1,9 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
-import { revalidatePath, revalidateTag, unstable_cache } from "next/cache";
+import { revalidatePath, unstable_cache } from "next/cache";
 import { z } from "zod";
-import { getUserId, getAuthenticatedUser } from "@/lib/auth-utils";
+import { getUserId } from "@/lib/auth-utils";
 import { TransactionType } from "@prisma/client";
 
 const transactionSchema = z.object({

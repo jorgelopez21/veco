@@ -70,10 +70,12 @@ export default function VehiclesPage() {
   };
 
   const loadVehicles = useCallback(async () => {
-    setLoading(true);
-    const data = await getVehicles();
-    setVehicles(data as unknown as Vehicle[]);
-    setLoading(false);
+    try {
+      const data = await getVehicles();
+      setVehicles(data as unknown as Vehicle[]);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   useEffect(() => {

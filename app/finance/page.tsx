@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { NeoButton } from "@/components/ui/neo-button";
-import { NeoCard } from "@/components/ui/neo-card";
 import { Plus } from "lucide-react";
 import Image from "next/image";
 import { getDashboardData } from "@/app/actions/dashboard";

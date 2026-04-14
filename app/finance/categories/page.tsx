@@ -14,7 +14,6 @@ import {
 } from "@/app/actions/categories";
 import { CATEGORY_ICONS } from "@/components/ui/category-icons";
 import { CircleHelp } from "lucide-react";
-import { cn } from "@/lib/utils";
 import { Toast } from "@/components/ui/toast";
 import { ConfirmToast } from "@/components/ui/confirm-toast";
 

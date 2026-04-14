@@ -1,4 +1,4 @@
-import { getCategories, getEVStatsInRange } from "@/app/actions/transactions";
+import { getEVStatsInRange } from "@/app/actions/transactions";
 import { getVehicles } from "@/app/actions/vehicles";
 import { EVStatsClient } from "./ev-stats-client";
 import { NeoButton } from "@/components/ui/neo-button";
@@ -11,10 +11,7 @@ export default async function EVStatsPage() {
   const session = await auth();
   const userId = session?.user?.id;
 
-  const [categories, vehicles] = await Promise.all([
-    getCategories(userId),
-    getVehicles(userId)
-  ]);
+  const vehicles = await getVehicles(userId);
   
   // Vehicles are already serialized by the action
   const initialStats = await getEVStatsInRange(
@@ -41,7 +38,7 @@ export default async function EVStatsPage() {
         </h1>
       </header>
 
-      <EVStatsClient categories={categories} vehicles={vehicles as any} initialStats={initialStats} />
+      <EVStatsClient vehicles={vehicles as { id: string; brand: string; model: string; batteryCapacity: number; degradation: number }[]} initialStats={initialStats} />
     </div>
   );
 }

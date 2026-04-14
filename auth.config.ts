@@ -1,7 +1,6 @@
 import Google from "next-auth/providers/google";
 import Credentials from "next-auth/providers/credentials";
 import type { NextAuthConfig } from "next-auth";
-import { prisma } from "@/lib/prisma";
 
 export default {
   providers: [
@@ -16,21 +15,21 @@ export default {
      */
     ...(process.env.NODE_ENV === "development"
       ? [
-          Credentials({
-            id: "dev-login",
-            name: "Developer Bypass",
-            credentials: {},
-            async authorize() {
-              // Usar un usuario de pruebas fijo para no mezclar con la cuenta real del dev
-              return {
-                id: "clx-demo-user-id-veco",
-                name: "Demo VECO",
-                email: "demo@veco.dev",
-                image: "https://ui-avatars.com/api/?name=Demo+Veco&background=10b981&color=fff",
-              };
-            },
-          }),
-        ]
+        Credentials({
+          id: "dev-login",
+          name: "Developer Bypass",
+          credentials: {},
+          async authorize() {
+            // Usar un usuario de pruebas fijo para no mezclar con la cuenta real del dev
+            return {
+              id: "clx-demo-user-id-veco",
+              name: "Demo VECO",
+              email: "contacto@minube.dev",
+              image: "https://ui-avatars.com/api/?name=Demo+Veco&background=10b981&color=fff",
+            };
+          },
+        }),
+      ]
       : []),
   ],
   callbacks: {

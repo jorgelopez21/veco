@@ -90,7 +90,7 @@ export async function updateVehicle(id: string, data: {
     revalidateTag(`vehicles-${userId}`);
     revalidatePath("/finance/vehicles");
     return { success: true, vehicle };
-  } catch (error) {
+  } catch {
     return { error: "Error al actualizar el vehículo" };
   }
 }
@@ -107,7 +107,7 @@ export async function deleteVehicle(id: string) {
     revalidateTag(`vehicles-${userId}`);
     revalidatePath("/finance/vehicles");
     return { success: true };
-  } catch (error) {
-    return { error: "Error al eliminar el vehículo" };
+  } catch {
+    return { success: false, error: "Error al guardar vehículo" };
   }
 }

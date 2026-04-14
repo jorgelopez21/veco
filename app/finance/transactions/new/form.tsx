@@ -33,11 +33,11 @@ interface TransactionFormProps {
   accounts: BankAccountOption[];
   vehicles: Vehicle[];
   lastOdo?: number;
+  fetchData: () => void;
 }
 
 export function TransactionForm({
   categories: allCategories,
-  recentIds,
   recentAccountIds,
   accounts,
   vehicles = [],
@@ -59,7 +59,6 @@ export function TransactionForm({
   const [kwhGrid, setKwhGrid] = useState("");
 
   const todayStr = formatToInputDate(new Date());
-  const yesterdayStr = formatToInputDate(new Date(new Date().setDate(new Date().getDate() - 1)));
 
   useEffect(() => {
     const isRecarga = allCategories.find(c => c.id === categoryId)?.name?.toLowerCase() === "recarga";
@@ -70,7 +69,7 @@ export function TransactionForm({
 
   useEffect(() => {
     if (evOrigin === "Casa") {
-      const energyAcc = accounts.find(a => a.type === "ENERGY");
+      const energyAcc = accounts.find((a: BankAccountOption) => a.type === "ENERGY");
       if (energyAcc) setAccountId(energyAcc.id);
     }
   }, [evOrigin, accounts]);
@@ -214,7 +213,7 @@ export function TransactionForm({
                   return (
                     <button
                       key={org.value}
-                      onClick={() => setEvOrigin(org.value as any)}
+                      onClick={() => setEvOrigin(org.value as "Casa" | "Pública Lenta" | "Pública Rápida")}
                       className={cn(
                         "relative flex flex-col items-center justify-center gap-3 h-28 rounded-3xl border transition-all duration-300",
                         isSelected 

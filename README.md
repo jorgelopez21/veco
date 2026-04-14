@@ -96,4 +96,59 @@ Este demo está configurado para un **lanzamiento público de bajo mantenimiento
 
 ---
 
-*Desarrollado con precisión en Antioquia, Colombia 🇨🇴*
+---
+
+# 🇺🇸 VECO — Electric Vehicles of Colombia
+
+> **Veco** is an open-source, premium personal finance manager specifically designed for Electric Vehicle (EV) owners in Colombia. Track your charging costs, monitor battery health, and master your financial flow with an interface designed for the future of mobility.
+
+## ✨ Features
+
+- 🔋 **EV Optimized**: Specialized modules to record charging sessions (kWh, SOC, Odometer).
+- ⚡ **Neon Infrastructure**: Powered by Neon Postgres for instant branching and serverless scalability.
+- 🔐 **Secure Auth**: Seamless integration with Google OAuth and Row-Level Security (RLS).
+- 🧹 **Self-Managed**: Automated Garbage Collection that maintains a 50-user limit for zero-cost demo hosting.
+- 🇨🇴 **Local Focus**: Tailored for the Colombian market (COP currency, local charging types, national branding).
+- 📱 **Mobile Ready**: PWA-ready design, ideal for logging expenses directly at the charging station.
+
+## 🚀 Local Quick Start
+
+### Prerequisites
+
+- Node.js 20+
+- A [Neon.tech](https://neon.tech) account (or local Postgres)
+- Google Cloud Console project (for OAuth)
+
+### Installation
+
+1. **Clone the repo:**
+   ```bash
+   git clone https://github.com/jorgelopez21/veco.git
+   cd veco
+   ```
+
+2. **Install dependencies:**
+   ```bash
+   npm install
+   ```
+
+3. **Database Initialization:**
+   ```bash
+   npx prisma db push
+   ```
+
+4. **Run development server:**
+   ```bash
+   npm run dev
+   ```
+
+---
+
+## 👨‍💻 Author
+
+**Jorge Lopez** — *Senior DevOps Engineer*
+[minube.dev](https://minube.dev)
+
+---
+
+*Developed with precision in Antioquia, Colombia 🇨🇴*

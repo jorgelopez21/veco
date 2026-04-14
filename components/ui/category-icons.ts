@@ -31,6 +31,6 @@ export const CATEGORY_ICONS: Record<string, LucideIcon> = {
   Circle,
 };
 
-export function getCategoryIcon(_name: string | undefined | null): LucideIcon {
+export function getCategoryIcon(): LucideIcon {
   return Car;
 }

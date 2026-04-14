@@ -22,7 +22,10 @@ export function CategoryDonutChart({
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    setMounted(true);
+    const handle = window.requestAnimationFrame(() => {
+      setMounted(true);
+    });
+    return () => window.cancelAnimationFrame(handle);
   }, []);
 
   const totalValue = data.reduce((acc, curr) => acc + curr.value, 0);

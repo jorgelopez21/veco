@@ -6,7 +6,7 @@ import { es } from "date-fns/locale/es";
 import { cn, formatCurrency } from "@/lib/utils";
 import { Zap, Calendar, TrendingUp, Info, ChevronDown } from "lucide-react";
 import { NeoCard } from "@/components/ui/neo-card";
-import { getEVStatsInRange, type Category } from "@/app/actions/transactions";
+import { getEVStatsInRange } from "@/app/actions/transactions";
 import { NeoButton } from "@/components/ui/neo-button";
 import {
   ResponsiveContainer,
@@ -44,13 +44,11 @@ interface EVStatsData {
 }
 
 interface EVStatsClientProps {
-  categories: Category[];
   vehicles: { id: string; brand: string; model: string; batteryCapacity: number; degradation: number }[];
   initialStats: EVStatsData;
 }
 
 export function EVStatsClient({
-  categories,
   vehicles = [],
   initialStats,
 }: EVStatsClientProps) {
@@ -82,7 +80,6 @@ export function EVStatsClient({
     // Rely on EV: prefix primarily, allow selectedCategoryId to be optional or used later for filtering
     setLoading(true);
     try {
-      // Use date string directly or ensure it doesn't shift timezones
       const from = new Date(dateFrom + "T00:00:00");
       const to = new Date(dateTo + "T23:59:59");
       const data = await getEVStatsInRange(from, to, selectedVehicleId);
@@ -148,7 +145,6 @@ export function EVStatsClient({
 
   const displayList = isAsc ? [...processed].reverse() : processed;
 
-  // Calculate distance since last recharge (sorted by date + id inside map or prior)
   const sorted = [...processed].sort(
     (a, b) => {
       const timeA = new Date(a.date).getTime();

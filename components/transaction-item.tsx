@@ -62,7 +62,6 @@ export function TransactionItem({ transaction }: TransactionItemProps) {
 
   const iconName = transaction.category?.icon;
   const IconComponent = getCategoryIcon(iconName);
-  const isExpense = transaction.type === TransactionType.EXPENSE;
 
   const showToast = (
     message: string,
