@@ -14,7 +14,7 @@ const accountSchema = z.object({
   color: z.string().optional(),
 });
 
-export async function createBankAccount(data: { name: string; balance?: number; currency?: string; color?: string }) {
+export async function createBankAccount(data: { name: string; type: string; balance?: number; currency?: string; color?: string }) {
   const session = await auth();
   if (!session?.user?.id) return { error: "No autorizado" };
 
@@ -39,7 +39,7 @@ export async function createBankAccount(data: { name: string; balance?: number; 
     });
 
     console.log(`[createBankAccount] Success: ${account.id}`);
-    revalidateTag(`accounts-${session.user.id}`);
+    revalidateTag(`accounts-${session.user.id}`, "max");
     revalidatePath("/finance/accounts");
     revalidatePath("/finance/transactions/new");
     return {
@@ -57,7 +57,7 @@ export async function createBankAccount(data: { name: string; balance?: number; 
   }
 }
 
-export async function updateBankAccount(id: string, data: Partial<{ name: string; balance: number; currency: string; color: string }>) {
+export async function updateBankAccount(id: string, data: Partial<{ name: string; type: string; balance: number; currency: string; color: string }>) {
   const session = await auth();
   if (!session?.user?.id) return { error: "No autorizado" };
 
@@ -72,7 +72,7 @@ export async function updateBankAccount(id: string, data: Partial<{ name: string
       data: validated.data,
     });
 
-    revalidateTag(`accounts-${session.user.id}`);
+    revalidateTag(`accounts-${session.user.id}`, "max");
     revalidatePath("/finance/accounts");
     return {
       success: true,
@@ -98,7 +98,7 @@ export async function deleteBankAccount(id: string) {
       where: { id, userId: session.user.id },
     });
 
-    revalidateTag(`accounts-${session.user.id}`);
+    revalidateTag(`accounts-${session.user.id}`, "max");
     revalidatePath("/finance/accounts");
     return { success: true };
   } catch {

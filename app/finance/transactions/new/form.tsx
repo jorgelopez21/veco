@@ -33,7 +33,8 @@ interface TransactionFormProps {
   accounts: BankAccountOption[];
   vehicles: Vehicle[];
   lastOdo?: number;
-  fetchData: () => void;
+  evStats?: { total: number; count: number; transactions: { amount: number; date: string; id: string; description: string | null }[] };
+  fetchData?: () => void;
 }
 
 export function TransactionForm({
@@ -75,7 +76,7 @@ export function TransactionForm({
   }, [evOrigin, accounts]);
 
   const [isLoading, setIsLoading] = useState(false);
-  const [toastState, setToastState] = useState({ message: "", type: "success" as const, visible: false });
+  const [toastState, setToastState] = useState({ message: "", type: "success" as "success" | "error", visible: false });
 
   const showToast = (message: string, type: "success" | "error" = "success") => {
     setToastState({ message, type, visible: true });

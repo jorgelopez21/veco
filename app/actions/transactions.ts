@@ -1,7 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
-import { revalidatePath, unstable_cache } from "next/cache";
+import { revalidatePath, unstable_cache, revalidateTag } from "next/cache";
 import { z } from "zod";
 import { getUserId } from "@/lib/auth-utils";
 import { TransactionType } from "@prisma/client";
@@ -35,6 +35,7 @@ export type Category = {
 export type CreateTransactionInput = {
   amount: number;
   type: TransactionType;
+  categoryId: string;
   accountId?: string | null;
   description?: string | null;
   date: Date;
@@ -178,6 +179,7 @@ export async function createTransaction(data: CreateTransactionInput) {
     revalidatePath("/finance");
     revalidatePath("/finance/transactions");
     revalidatePath("/finance/accounts");
+    revalidateTag(`transactions-${userId}`, "max");
 
     return {
       success: true,
@@ -189,19 +191,20 @@ export async function createTransaction(data: CreateTransactionInput) {
   }
 }
 
-const getCachedCategories = unstable_cache(
-  async (userId: string) => {
-    return await prisma.category.findMany({
-      where: { userId },
-      orderBy: { name: "asc" },
-    });
-  },
-  ["categories-list"],
-  {
-    tags: ["categories"],
-    revalidate: 3600,
-  }
-);
+const getCachedCategories = (userId: string) => 
+  unstable_cache(
+    async () => {
+      return await prisma.category.findMany({
+        where: { userId },
+        orderBy: { name: "asc" },
+      });
+    },
+    ["categories-list", userId],
+    {
+      tags: [`categories-${userId}`],
+      revalidate: 3600,
+    }
+  )();
 
 export async function getCategories(providedUserId?: string): Promise<Category[]> {
   const userId = providedUserId || (await getUserId());
@@ -209,19 +212,20 @@ export async function getCategories(providedUserId?: string): Promise<Category[]
   return (await getCachedCategories(userId)) as Category[];
 }
 
-const getCachedBankAccounts = unstable_cache(
-  async (userId: string) => {
-    return await prisma.bankAccount.findMany({
-      where: { userId },
-      orderBy: { name: "asc" },
-    });
-  },
-  ["bank-accounts-list"],
-  {
-    tags: ["accounts"],
-    revalidate: 3600,
-  }
-);
+const getCachedBankAccounts = (userId: string) => 
+  unstable_cache(
+    async () => {
+      return await prisma.bankAccount.findMany({
+        where: { userId },
+        orderBy: { name: "asc" },
+      });
+    },
+    ["bank-accounts-list", userId],
+    {
+      tags: [`accounts-${userId}`],
+      revalidate: 3600,
+    }
+  )();
 
 export async function getBankAccounts(providedUserId?: string) {
   const userId = providedUserId || (await getUserId());
@@ -237,8 +241,8 @@ export async function getBankAccounts(providedUserId?: string) {
     currency: acc.currency,
     color: acc.color,
     userId: acc.userId,
-    createdAt: acc.createdAt.toISOString(),
-    updatedAt: acc.updatedAt.toISOString(),
+    createdAt: new Date(acc.createdAt).toISOString(),
+    updatedAt: new Date(acc.updatedAt).toISOString(),
   }));
 }
 
@@ -388,6 +392,8 @@ export async function updateTransaction(
     revalidatePath("/finance");
     revalidatePath("/finance/transactions");
     revalidatePath("/finance/accounts");
+    revalidateTag(`transactions-${userId}`, "max");
+
     return {
       success: true,
       transaction: { ...result, amount: Number(result.amount) },
@@ -434,43 +440,44 @@ export async function getRecentAccountIds() {
   return Array.from(new Set(accountIds)).slice(0, 5);
 }
 
-const getCachedEVStats = unstable_cache(
-  async (userId: string, startStr: string, endStr: string, vehicleId?: string) => {
-    const start = new Date(startStr);
-    const end = new Date(endStr);
-    
-    const transactions = await prisma.transaction.findMany({
-      where: {
-        userId,
-        date: { gte: start, lte: end },
-        description: { startsWith: "EV:" },
-        ...(vehicleId && vehicleId !== "ALL" ? { vehicleId } : {}),
-      },
-      select: { amount: true, description: true, date: true, id: true },
-      orderBy: { date: "desc" },
-    });
+const getCachedEVStats = (userId: string, startStr: string, endStr: string, vehicleId?: string) => 
+  unstable_cache(
+    async () => {
+      const start = new Date(startStr);
+      const end = new Date(endStr);
+      
+      const transactions = await prisma.transaction.findMany({
+        where: {
+          userId,
+          date: { gte: start, lte: end },
+          description: { startsWith: "EV:" },
+          ...(vehicleId && vehicleId !== "ALL" ? { vehicleId } : {}),
+        },
+        select: { amount: true, description: true, date: true, id: true },
+        orderBy: { date: "desc" },
+      });
 
-    const total = transactions.reduce(
-      (acc, curr) => acc + Number(curr.amount),
-      0,
-    );
+      const total = transactions.reduce(
+        (acc, curr) => acc + Number(curr.amount),
+        0,
+      );
 
-    return {
-      total,
-      count: transactions.length,
-      transactions: transactions.map((t) => ({
-        ...t,
-        amount: Number(t.amount),
-        date: t.date.toISOString(),
-      })),
-    };
-  },
-  ["ev-stats-range"],
-  {
-    tags: ["transactions"],
-    revalidate: 3600,
-  }
-);
+      return {
+        total,
+        count: transactions.length,
+        transactions: transactions.map((t) => ({
+          ...t,
+          amount: Number(t.amount),
+          date: t.date.toISOString(),
+        })),
+      };
+    },
+    ["ev-stats-range", userId, startStr, endStr, vehicleId || "ALL"],
+    {
+      tags: [`transactions-${userId}`],
+      revalidate: 3600,
+    }
+  )();
 
 export async function getEVStatsInRange(
   startDate: Date, 
@@ -502,7 +509,7 @@ export async function getPreviousMonthEVStats(providedUserId?: string) {
     23,
     59,
     59,
-    999,
+    999
   );
 
   return getEVStatsInRange(firstOfLastMonth, endOfLastMonth, undefined, userId);
@@ -527,9 +534,6 @@ export async function getTransactionFormData(id?: string, providedUserId?: strin
     })
   ]);
 
-  // Extract recent IDs from the most recent transactions to avoid a separate huge query
-  // This is a local optimization since we already might have transactions cached or are fetching them
-  // For now, let's keep it simple or fetch a small set
   const recentTx = await prisma.transaction.findMany({
     where: { userId },
     orderBy: { date: "desc" },
@@ -613,6 +617,7 @@ export async function deleteTransaction(id: string) {
     revalidatePath("/finance");
     revalidatePath("/finance/transactions");
     revalidatePath("/finance/accounts");
+    revalidateTag(`transactions-${userId}`, "max");
     return { success: true };
   } catch (error) {
     console.error("Delete error:", error);

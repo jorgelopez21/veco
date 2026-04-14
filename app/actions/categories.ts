@@ -1,7 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { getUserId } from "@/lib/auth-utils";
 
 export async function createCategory(data: {
@@ -24,6 +24,7 @@ export async function createCategory(data: {
     revalidatePath("/finance");
     revalidatePath("/finance/transactions/new");
     revalidatePath("/finance/categories");
+    revalidateTag(`categories-${userId}`, "max");
     return { success: true, category };
   } catch (error) {
     console.error(error);
@@ -51,6 +52,7 @@ export async function updateCategory(
     revalidatePath("/finance");
     revalidatePath("/finance/transactions/new");
     revalidatePath("/finance/categories");
+    revalidateTag(`categories-${userId}`, "max");
     return { success: true, category };
   } catch (error) {
     console.error(error);
@@ -70,6 +72,7 @@ export async function deleteCategory(id: string) {
     revalidatePath("/finance");
     revalidatePath("/finance/transactions/new");
     revalidatePath("/finance/categories");
+    revalidateTag(`categories-${userId}`, "max");
     return { success: true };
   } catch (error) {
     console.error(error);

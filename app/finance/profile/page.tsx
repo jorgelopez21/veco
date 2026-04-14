@@ -119,7 +119,9 @@ export default async function ProfilePage() {
           </NeoButton>
         </form>
 
-        <DeleteAccountButton />
+        <DeleteAccountButton 
+          isDemo={user.id === "clx-demo-user-id-veco" || user.email === "contacto@minube.dev"} 
+        />
 
         <div className="flex justify-center pt-2">
           <a 

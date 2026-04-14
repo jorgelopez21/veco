@@ -60,7 +60,7 @@ export default function CategoriesPage() {
 
   const [form, setForm] = useState({
     name: "",
-    type: "EXPENSE" as const,
+    type: "EXPENSE" as "EXPENSE" | "INCOME",
     icon: "CircleHelp",
     color: "#10b981",
   });

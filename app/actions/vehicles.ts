@@ -5,19 +5,20 @@ import { revalidatePath, revalidateTag, unstable_cache } from "next/cache";
 import { getUserId } from "@/lib/auth-utils";
 
 
-const getCachedVehicles = unstable_cache(
-  async (userId: string) => {
-    return await prisma.vehicle.findMany({
-      where: { userId },
-      orderBy: { createdAt: "desc" },
-    });
-  },
-  ["vehicles-list"],
-  {
-    tags: ["vehicles"],
-    revalidate: 3600,
-  }
-);
+const getCachedVehicles = (userId: string) => 
+  unstable_cache(
+    async () => {
+      return await prisma.vehicle.findMany({
+        where: { userId },
+        orderBy: { createdAt: "desc" },
+      });
+    },
+    ["vehicles-list", userId],
+    {
+      tags: [`vehicles-${userId}`],
+      revalidate: 3600,
+    }
+  )();
 
 export async function getVehicles(providedUserId?: string) {
   const userId = providedUserId || (await getUserId());
@@ -32,8 +33,8 @@ export async function getVehicles(providedUserId?: string) {
     batteryCapacity: Number(v.batteryCapacity),
     degradation: Number(v.degradation),
     userId: v.userId,
-    createdAt: v.createdAt.toISOString(),
-    updatedAt: v.updatedAt.toISOString(),
+    createdAt: new Date(v.createdAt).toISOString(),
+    updatedAt: new Date(v.updatedAt).toISOString(),
   }));
 }
 
@@ -57,7 +58,7 @@ export async function createVehicle(data: {
       },
     });
 
-    revalidateTag(`vehicles-${userId}`);
+    revalidateTag(`vehicles-${userId}`, "max");
     revalidatePath("/finance/vehicles");
     revalidatePath("/finance/transactions/new");
     return { success: true, vehicle };
@@ -87,7 +88,7 @@ export async function updateVehicle(id: string, data: {
       },
     });
 
-    revalidateTag(`vehicles-${userId}`);
+    revalidateTag(`vehicles-${userId}`, "max");
     revalidatePath("/finance/vehicles");
     return { success: true, vehicle };
   } catch {
@@ -104,7 +105,7 @@ export async function deleteVehicle(id: string) {
       where: { id, userId },
     });
 
-    revalidateTag(`vehicles-${userId}`);
+    revalidateTag(`vehicles-${userId}`, "max");
     revalidatePath("/finance/vehicles");
     return { success: true };
   } catch {

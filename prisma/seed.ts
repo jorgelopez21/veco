@@ -35,6 +35,7 @@ async function main() {
     where: { email: demoEmail },
     update: {},
     create: {
+      id: "clx-demo-user-id-veco",
       email: demoEmail,
       name: "Demo User",
     },

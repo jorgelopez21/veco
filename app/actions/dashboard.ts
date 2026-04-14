@@ -5,11 +5,12 @@ import { startOfMonth, endOfMonth } from "date-fns";
 import { getUserId } from "@/lib/auth-utils";
 import { unstable_cache } from "next/cache";
 
-const getCachedDashboardData = unstable_cache(
-  async (userId: string, fromStr: string, toStr: string) => {
-    const from = new Date(fromStr);
-    const to = new Date(toStr);
-    const dateFilter = { gte: from, lte: to };
+const getCachedDashboardData = (userId: string, fromStr: string, toStr: string) => 
+  unstable_cache(
+    async () => {
+      const from = new Date(fromStr);
+      const to = new Date(toStr);
+      const dateFilter = { gte: from, lte: to };
 
     // Optimized: 3 queries handled in parallel
     const [
@@ -70,13 +71,13 @@ const getCachedDashboardData = unstable_cache(
       recentTransactions: formattedTransactions,
       categoryStats,
     };
-  },
-  ["dashboard-data"],
-  {
-    tags: ["transactions", "categories"],
-    revalidate: 3600,
-  }
-);
+    },
+    ["dashboard-data", userId, fromStr, toStr],
+    {
+      tags: [`dashboard-${userId}`, `transactions-${userId}`, `categories-${userId}`],
+      revalidate: 3600,
+    }
+  )();
 
 export async function getDashboardData(
   startDate?: Date,
