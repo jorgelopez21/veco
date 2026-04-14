@@ -24,12 +24,12 @@ export function DeleteAccountButton() {
   return (
     <>
       <NeoButton
-        variant="ghost"
+        variant="secondary"
         onClick={() => setIsConfirmOpen(true)}
-        className="w-full h-14 font-black uppercase tracking-widest text-muted-foreground/40 hover:text-rose-500 hover:bg-rose-500/5 transition-all text-[9px] rounded-2xl border border-dashed border-white/5"
+        className="w-full h-12 font-black uppercase tracking-widest text-muted-foreground/60 hover:text-rose-500 border-white/5 bg-white/5 text-[9px] rounded-2xl transition-all active:scale-95"
       >
         <UserX className="w-4 h-4 mr-3" />
-        Darse de baja
+        Eliminar mi cuenta
       </NeoButton>
 
       <ConfirmToast
