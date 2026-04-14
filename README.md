@@ -1,97 +1,99 @@
 # 🇨🇴 VECO — Vehículos Eléctricos de Colombia
 
-![VECO Logo](public/logo-veco-colombia.png)
+<p align="center">
+  <img src="public/logo-veco-colombia.png" alt="VECO Logo" width="160" />
+</p>
 
-> **Veco** is a premium, open-source personal finance tracker specialized for Electric Vehicle (EV) owners in Colombia. Manage your charging expenses, track battery health, and master your financial flow with an interface designed for the future of mobility.
+> **Veco** es un gestor de finanzas personales premium y de código abierto, especializado para propietarios de Vehículos Eléctricos (EV) en Colombia. Administra tus gastos de carga, monitorea la salud de tu batería y domina tu flujo financiero con una interfaz diseñada para el futuro de la movilidad.
 
 ---
 
-## ✨ Features
+## ✨ Características
 
-- 🔋 **EV Optimized**: Specialized modules for tracking charging sessions (kWh, SOC, Odometer).
-- ⚡ **Neon Infrastructure**: Powered by Neon Postgres for instant branching and serverless scalability.
-- 🔐 **Secure Auth**: Seamless Google OAuth integration and Row Level Security (RLS).
-- 🧹 **Self-Managing**: Integrated garbage collection that maintains a 50-user capacity for zero-cost demo hosting.
-- 🇨🇴 **Local First**: Built with the Colombian market in mind (COP currency, energy charging types, local branding).
-- 📱 **Mobile Ready**: PWA-ready design for recording expenses on the go, directly at the charging station.
+- 🔋 **Optimizado para EV**: Módulos especializados para registrar sesiones de carga (kWh, SOC, Odómetro).
+- ⚡ **Infraestructura con Neon**: Potenciado por Neon Postgres para branching instantáneo y escalabilidad serverless.
+- 🔐 **Autenticación Segura**: Integración fluida con Google OAuth y Seguridad a Nivel de Fila (RLS).
+- 🧹 **Autogestionado**: Limpieza automática (Garbage Collection) que mantiene un límite de 50 usuarios para hosting demo de costo cero.
+- 🇨🇴 **Enfoque Local**: Diseñado para el mercado colombiano (Moneda COP, tipos de carga locales, branding nacional).
+- 📱 **Mobile Ready**: Diseño listo para PWA, ideal para registrar gastos directamente en la estación de carga.
 
-## 🛠️ Technology Stack
+## 🛠️ Stack Tecnológico
 
 - **Framework**: [Next.js 15+](https://nextjs.org/) (App Router)
-- **Database**: [PostgreSQL (Neon)](https://neon.tech/)
+- **Base de Datos**: [PostgreSQL (Neon)](https://neon.tech/)
 - **ORM**: [Prisma](https://www.prisma.io/)
 - **Auth**: [Auth.js (NextAuth v5)](https://authjs.dev/)
-- **Styling**: Tailwind CSS + Custom Neo-Glassmorphism UI
-- **Deployment**: Vercel + GitHub Actions
+- **Estilos**: Tailwind CSS + UI Neo-Glassmorphism personalizada
+- **Despliegue**: Vercel + GitHub Actions
 
 ---
 
-## 🚀 Getting Started Locally
+## 🚀 Inicio Rápido Local
 
-### Prerequisites
+### Requisitos Previos
 
 - Node.js 20+
-- A [Neon.tech](https://neon.tech) account (or local Postgres)
-- Google Cloud Console Project (for OAuth)
+- Una cuenta en [Neon.tech](https://neon.tech) (o Postgres local)
+- Proyecto en Google Cloud Console (para OAuth)
 
-### Installation
+### Instalación
 
-1. **Clone the repository:**
+1. **Clona el repositorio:**
    ```bash
    git clone https://github.com/jorgelopez21/veco.git
    cd veco
    ```
 
-2. **Install dependencies:**
+2. **Instala las dependencias:**
    ```bash
    npm install
    ```
 
-3. **Environment Setup:**
-   Create a `.env` file based on your credentials:
+3. **Configuración de Entorno:**
+   Crea un archivo `.env` basado en tus credenciales:
    ```env
    DATABASE_URL="postgresql://..."
    DIRECT_URL="postgresql://..."
-   NEXTAUTH_SECRET="your-secret"
-   GOOGLE_CLIENT_ID="your-google-id"
-   GOOGLE_CLIENT_SECRET="your-google-secret"
+   NEXTAUTH_SECRET="tu-secreto"
+   GOOGLE_CLIENT_ID="tu-google-id"
+   GOOGLE_CLIENT_SECRET="tu-google-secret"
    NEXT_PUBLIC_ALLOW_DEV_BYPASS="true"
    ```
 
-4. **Initialize Database:**
+4. **Inicializa la Base de Datos:**
    ```bash
    npx prisma db push
    ```
 
-5. **Run the development server:**
+5. **Lanza el servidor de desarrollo:**
    ```bash
    npm run dev
    ```
 
-Visit `http://localhost:3000` to see your local instance.
+Visita `http://localhost:3000` para ver tu instancia local.
 
 ---
 
-## 🛡️ Demo Constraints
+## 🛡️ Restricciones del Demo
 
-This demo is configured for **low-maintenance public release**:
-- **Capacity**: Auto-limited to 50 active users.
-- **Cleanup**: Users inactive for more than 30 days are automatically removed to free up database space.
-- **Developer Bypass**: In development mode, a secure bypass is provided for rapid testing without OAuth.
-
----
-
-## 🤝 Contributing
-
-Contributions are welcome! If you have ideas for improving the EV charging analytics or general UI, feel free to open a PR.
+Este demo está configurado para un **lanzamiento público de bajo mantenimiento**:
+- **Capacidad**: Autolimitado a 50 usuarios activos.
+- **Limpieza**: Los usuarios inactivos por más de 30 días se eliminan automáticamente para liberar espacio.
+- **Bypass de Desarrollo**: En modo local, se proporciona un acceso rápido para pruebas sin necesidad de OAuth.
 
 ---
 
-## 👨‍💻 Author
+## 🤝 Contribuciones
+
+¡Las contribuciones son bienvenidas! Si tienes ideas para mejorar la analítica de carga o la interfaz general, no dudes en abrir un PR.
+
+---
+
+## 👨‍💻 Autor
 
 **Jorge Lopez** — *Senior DevOps Engineer*
 [minube.dev](https://minube.dev)
 
 ---
 
-*Built with precision in Colombia 🇨🇴*
+*Desarrollado con precisión en Antioquia, Colombia 🇨🇴*
