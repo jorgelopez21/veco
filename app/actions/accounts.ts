@@ -1,8 +1,8 @@
 "use server";
 
+import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { revalidatePath, revalidateTag } from "next/cache";
-import { getUserId } from "@/lib/auth-utils";
 
 import { z } from "zod";
 
@@ -14,9 +14,9 @@ const accountSchema = z.object({
   color: z.string().optional(),
 });
 
-export async function createBankAccount(data: any) {
-  const userId = await getUserId();
-  if (!userId) return { error: "No autorizado" };
+export async function createBankAccount(data: { name: string; type: string; balance?: number; currency?: string; color?: string }) {
+  const session = await auth();
+  if (!session?.user?.id) return { error: "No autorizado" };
 
   const validated = accountSchema.safeParse(data);
   if (!validated.success) {
@@ -27,6 +27,9 @@ export async function createBankAccount(data: any) {
   const { name, type, balance, currency, color } = validated.data;
 
   try {
+    const count = await prisma.bankAccount.count({ where: { userId: session.user.id } });
+    if (count >= 10) return { error: "Límite alcanzado: máximo 10 cuentas" };
+
     const account = await prisma.bankAccount.create({
       data: {
         name,
@@ -34,12 +37,12 @@ export async function createBankAccount(data: any) {
         balance: balance || 0,
         currency: currency || "COP",
         color: color || "#3b82f6",
-        userId: userId as string,
+        userId: session.user.id,
       },
     });
 
     console.log(`[createBankAccount] Success: ${account.id}`);
-    revalidateTag(`accounts-${userId}`);
+    revalidateTag(`accounts-${session.user.id}`, "max");
     revalidatePath("/finance/accounts");
     revalidatePath("/finance/transactions/new");
     return {
@@ -57,9 +60,9 @@ export async function createBankAccount(data: any) {
   }
 }
 
-export async function updateBankAccount(id: string, data: any) {
-  const userId = await getUserId();
-  if (!userId) return { error: "No autorizado" };
+export async function updateBankAccount(id: string, data: Partial<{ name: string; type: string; balance: number; currency: string; color: string }>) {
+  const session = await auth();
+  if (!session?.user?.id) return { error: "No autorizado" };
 
   const validated = accountSchema.partial().safeParse(data);
   if (!validated.success) {
@@ -68,11 +71,11 @@ export async function updateBankAccount(id: string, data: any) {
 
   try {
     const account = await prisma.bankAccount.update({
-      where: { id, userId },
+      where: { id, userId: session.user.id },
       data: validated.data,
     });
 
-    revalidateTag(`accounts-${userId}`);
+    revalidateTag(`accounts-${session.user.id}`, "max");
     revalidatePath("/finance/accounts");
     return {
       success: true,
@@ -90,15 +93,15 @@ export async function updateBankAccount(id: string, data: any) {
 }
 
 export async function deleteBankAccount(id: string) {
-  const userId = await getUserId();
-  if (!userId) return { error: "No autorizado" };
+  const session = await auth();
+  if (!session?.user?.id) return { error: "No autorizado" };
 
   try {
     await prisma.bankAccount.delete({
-      where: { id, userId },
+      where: { id, userId: session.user.id },
     });
 
-    revalidateTag(`accounts-${userId}`);
+    revalidateTag(`accounts-${session.user.id}`, "max");
     revalidatePath("/finance/accounts");
     return { success: true };
   } catch {

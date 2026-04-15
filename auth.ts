@@ -2,6 +2,7 @@ import NextAuth from "next-auth";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import { prisma } from "@/lib/prisma";
 import authConfig from "./auth.config";
+import { provisionUser } from "@/lib/provision";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: PrismaAdapter(prisma),
@@ -9,6 +10,16 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   trustHost: true,
   secret: process.env.NEXTAUTH_SECRET || process.env.AUTH_SECRET,
   ...authConfig,
+  events: {
+    async createUser({ user }) {
+      if (!user.id) return;
+      try {
+        await provisionUser(user.id);
+      } catch (error) {
+        console.error(`Provision failed for ${user.email}:`, error);
+      }
+    }
+  },
   callbacks: {
     ...authConfig.callbacks,
     async signIn({ user }) {

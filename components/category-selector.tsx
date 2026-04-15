@@ -16,7 +16,7 @@ export function CategorySelector({
   onSelect,
 }: CategorySelectorProps) {
   return (
-    <div className="flex gap-4 overflow-x-auto pb-4 pt-2 -mx-2 px-2 scrollbar-hide snap-x h-[110px]">
+    <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-4 lg:grid-cols-5 gap-x-2 gap-y-6 max-h-[320px] overflow-y-auto pr-2 pt-2 scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent custom-scrollbar">
       {categories.map((cat) => {
         const isSelected = selectedId === cat.id;
         const color = cat.color || "#888888";
@@ -26,30 +26,30 @@ export function CategorySelector({
             key={cat.id}
             type="button"
             onClick={() => onSelect(cat.id)}
-            className="flex flex-col items-center gap-2 group snap-center min-w-[70px]"
+            className="flex flex-col items-center gap-2 group transition-transform active:scale-95"
           >
             <div
               className={cn(
-                "w-14 h-14 rounded-full flex items-center justify-center transition-all duration-300 border",
+                "w-16 h-16 rounded-[2rem] flex items-center justify-center transition-all duration-300 border-2",
                 isSelected
-                  ? "shadow-lg scale-110"
-                  : "shadow-[inset_0_0_10px_rgba(0,0,0,0.2)] hover:scale-105 opacity-80 hover:opacity-100",
+                  ? "shadow-[0_0_25px_-5px_rgba(0,0,0,0.5)] scale-110"
+                  : "opacity-70 hover:opacity-100 hover:scale-105",
               )}
               style={{
-                borderColor: color,
-                color: color,
-                backgroundColor: isSelected ? `${color}30` : `${color}10`,
-                boxShadow: isSelected ? `0 0 20px ${color}40` : undefined,
+                borderColor: isSelected ? color : `${color}40`,
+                color: isSelected ? "#fff" : color,
+                backgroundColor: isSelected ? color : `${color}10`,
+                boxShadow: isSelected ? `0 10px 30px -10px ${color}80` : undefined,
               }}
             >
-              <Car className="w-6 h-6 stroke-[2.5]" />
+              <Car className={cn("w-7 h-7 stroke-[2.5]", isSelected && "drop-shadow-lg")} />
             </div>
             <span
               className={cn(
-                "text-[10px] font-bold text-center transition-colors truncate w-full uppercase tracking-tighter",
+                "text-[10px] font-black text-center transition-all uppercase tracking-tight leading-none px-0.5 break-words w-full",
                 isSelected
-                  ? "text-foreground font-black"
-                  : "text-muted-foreground",
+                  ? "text-white opacity-100"
+                  : "text-white/70 group-hover:text-white",
               )}
             >
               {cat.name}
@@ -60,3 +60,6 @@ export function CategorySelector({
     </div>
   );
 }
+
+
+

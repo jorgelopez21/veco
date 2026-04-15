@@ -1,8 +1,8 @@
-name: CI Pipeline
+name: CI/CD Pipeline
 
 on:
   push:
-    branches: ["features"]
+    branches: ["main"]
   pull_request:
     branches: ["main"]
 
@@ -15,7 +15,7 @@ permissions:
   pull-requests: read
   id-token: write
   security-events: write
-  actions: read # Requerido para telemetría de upload-sarif en el workflow hijo
+  actions: read
 
 jobs:
   lint:
@@ -40,6 +40,12 @@ jobs:
       - name: Type check
         run: npx tsc --noEmit
 
+  security:
+    name: Security Scan
+    needs: [lint]
+    uses: ./.github/workflows/security.yml
+    secrets: inherit
+
   test:
     name: Unit Tests
     runs-on: ubuntu-latest
@@ -61,22 +67,17 @@ jobs:
         env:
           DATABASE_URL: "postgresql://dummy:dummy@localhost:5432/dummy"
           DIRECT_URL: "postgresql://dummy:dummy@localhost:5432/dummy"
-          GCP_PROJECT_ID: "dummy"
           NEXTAUTH_SECRET: "ci-dummy-secret-32-chars-minimum!!"
         run: npm test
 
   build:
-    name: Build
+    name: Build Verification
     runs-on: ubuntu-latest
-    needs: [lint, test]
+    needs: [test, security]
     env:
-      DATABASE_URL: "postgresql://dummy:dummy@localhost:5432/dummy"
-      DIRECT_URL: "postgresql://dummy:dummy@localhost:5432/dummy"
-      GCP_PROJECT_ID: "dummy"
+      DATABASE_URL: ${{ secrets.DATABASE_URL || 'postgresql://dummy:dummy@localhost:5432/dummy' }}
+      DIRECT_URL: ${{ secrets.DIRECT_URL || 'postgresql://dummy:dummy@localhost:5432/dummy' }}
       NEXTAUTH_SECRET: "ci-dummy-secret-32-chars-minimum!!"
-      NEXTAUTH_URL: "https://vaquiros.minube.dev"
-      GOOGLE_CLIENT_ID: "dummy"
-      GOOGLE_CLIENT_SECRET: "dummy"
       NEXT_PUBLIC_TURNSTILE_SITE_KEY: ${{ secrets.NEXT_PUBLIC_TURNSTILE_SITE_KEY }}
     steps:
       - name: Checkout code
@@ -97,9 +98,36 @@ jobs:
       - name: Build
         run: npm run build
 
-  security:
-    name: Security Scan
-    # Corre en paralelo con test (ambos esperan lint)
-    needs: [lint]
-    uses: ./.github/workflows/security.yml
-    secrets: inherit
+  deploy:
+    name: Sync DB & Deploy
+    needs: build
+    # Solo desplegar si estamos en la rama main (ya sea push directo o merge de PR)
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Apply database schema (Prisma)
+        run: npx prisma db push
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DIRECT_URL: ${{ secrets.DIRECT_URL }}
+
+      - name: Deploy to Vercel
+        uses: amondnet/vercel-action@v25
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+          vercel-args: '--prod'
+          working-directory: ./

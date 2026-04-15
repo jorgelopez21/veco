@@ -119,12 +119,19 @@ export default async function ProfilePage() {
           </NeoButton>
         </form>
 
-        <DeleteAccountButton />
+        <DeleteAccountButton 
+          isDemo={user.id === "clx-demo-user-id-veco" || user.email === "contacto@minube.dev"} 
+        />
 
         <div className="flex justify-center pt-2">
-          <span className="text-[9px] font-black uppercase tracking-[0.3em] text-muted-foreground/40 select-none">
-            Veco v0.1.2
-          </span>
+          <a 
+            href="https://github.com/jorgelopez21/veco"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-[10px] font-black uppercase tracking-[0.3em] text-primary hover:text-emerald-400 transition-all select-none bg-primary/5 px-4 py-1.5 rounded-full border border-primary/10"
+          >
+            Veco v0.4.0
+          </a>
         </div>
       </div>
     </div>

@@ -13,8 +13,8 @@ import {
   deleteCategory,
 } from "@/app/actions/categories";
 import { CATEGORY_ICONS } from "@/components/ui/category-icons";
-import { CircleHelp } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { CircleHelp } from "lucide-react";
 import { Toast } from "@/components/ui/toast";
 import { ConfirmToast } from "@/components/ui/confirm-toast";
 
@@ -61,8 +61,8 @@ export default function CategoriesPage() {
 
   const [form, setForm] = useState({
     name: "",
-    type: "EXPENSE" as const,
-    icon: "CircleHelp",
+    type: "EXPENSE" as "EXPENSE" | "INCOME",
+    icon: "Car",
     color: "#10b981",
   });
 
@@ -112,7 +112,7 @@ export default function CategoriesPage() {
     setForm({
       name: "",
       type: "EXPENSE",
-      icon: "CircleHelp",
+      icon: "Car",
       color: "#10b981",
     });
   };
@@ -171,7 +171,7 @@ export default function CategoriesPage() {
 
       {/* Floating Back Button */}
       <div className="fixed top-6 left-6 z-50">
-        <Link href="/finance/transactions/new">
+        <Link href="/finance/profile">
           <NeoButton
             variant="secondary"
             className="gap-1.5 h-9 px-3 rounded-xl shadow-xl hover:scale-[1.05] active:scale-95 transition-all text-[10px] font-black uppercase tracking-widest border-white/10 bg-black/20 backdrop-blur-md"
@@ -196,7 +196,7 @@ export default function CategoriesPage() {
                 setForm({
                   name: "",
                   type: "EXPENSE",
-                  icon: "CircleHelp",
+                  icon: "Car",
                   color: "#10b981",
                 });
                 setIsAdding(true);
@@ -225,56 +225,50 @@ export default function CategoriesPage() {
 
             <div className="flex flex-col gap-2">
               <label className="text-[8px] uppercase font-black text-muted-foreground tracking-widest pl-1">
-                Nombre
+                Nombre (ej. Carga Celsia)
               </label>
               <input
                 className="bg-white/5 border border-white/10 rounded-xl px-4 h-12 text-sm font-bold outline-none focus:ring-1 ring-primary/50"
                 placeholder="..."
                 value={form.name}
                 onChange={(e) => setForm({ ...form, name: e.target.value })}
+                maxLength={20}
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              <div className="flex flex-col gap-2">
-                <label className="text-[8px] uppercase font-black text-muted-foreground tracking-widest pl-1">
-                  Color
-                </label>
-                <input
-                  type="color"
-                  className="w-full h-12 bg-white/5 border border-white/10 rounded-xl p-1 cursor-pointer"
-                  value={form.color}
-                  onChange={(e) => setForm({ ...form, color: e.target.value })}
-                />
-              </div>
-              <div className="flex flex-col gap-2">
-                <label className="text-[8px] uppercase font-black text-muted-foreground tracking-widest pl-1">
-                  Icono
-                </label>
-                <select
-                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 h-12 text-sm font-bold outline-none appearance-none cursor-pointer"
-                  value={form.icon}
-                  onChange={(e) => setForm({ ...form, icon: e.target.value })}
-                >
-                  <option value="CircleHelp">Defecto</option>
-                  <option value="Utensils">Comida</option>
-                  <option value="Car">Transporte</option>
-                  <option value="Home">Hogar</option>
-                  <option value="Gamepad2">Ocio</option>
-                  <option value="ShoppingBag">Compras</option>
-                  <option value="Briefcase">Trabajo</option>
-                  <option value="TrendingUp">Inversión</option>
-                  <option value="Laptop">Freelance</option>
-                  <option value="Heart">Salud</option>
-                  <option value="Book">Educación</option>
-                  <option value="Plane">Viajes</option>
-                </select>
+            <div className="flex flex-col gap-1.5">
+              <label className="text-[8px] uppercase font-black text-muted-foreground tracking-[0.2em] pl-1">
+                Color de la Categoría
+              </label>
+              <div className="flex flex-wrap gap-2 pt-1 px-1">
+                {[
+                  "#10b981", // Emerald (Base)
+                  "#00f2ff", // Neo Cyan
+                  "#ff0055", // Rose Neo
+                  "#a855f7", // Electric Purple
+                  "#ffff00", // Bright Yellow
+                  "#ff8800", // Vivid Orange
+                  "#00ff00", // Pure Lime
+                  "#ffffff", // Contrast White
+                ].map((c) => (
+                  <button
+                    key={c}
+                    onClick={() => setForm({ ...form, color: c })}
+                    className={`w-8 h-8 rounded-full border-2 transition-all ${
+                      form.color === c
+                        ? "border-white scale-110 shadow-lg"
+                        : "border-transparent opacity-50 hover:opacity-100"
+                    }`}
+                    style={{ backgroundColor: c }}
+                  />
+                ))}
               </div>
             </div>
 
             <NeoButton
               className="w-full h-12 font-black uppercase tracking-widest mt-2"
               onClick={handleSave}
+              style={{ backgroundColor: form.color, color: "#000" }}
             >
               {editingId ? "Guardar Cambios" : "Crear Categoría"}
             </NeoButton>
@@ -329,9 +323,11 @@ function CategoryItem({
   const deleteScale = useTransform(x, [-100, -50], [1, 0.5]);
   const editScale = useTransform(x, [50, 100], [0.5, 1]);
 
+  const isRecarga = cat.name.toLowerCase() === "recarga";
+
   const onDragEnd = (_: unknown, info: PanInfo) => {
     if (info.offset.x < -100) {
-      onDelete(cat.id);
+      if (!isRecarga) onDelete(cat.id);
     } else if (info.offset.x > 100) {
       onEdit(cat);
     }
@@ -354,18 +350,18 @@ function CategoryItem({
         </motion.div>
         <motion.div
           style={{ opacity: deleteBgOpacity, scale: deleteScale }}
-          className="flex items-center gap-2 text-rose-500"
+          className={cn("flex items-center gap-2", isRecarga ? "text-muted-foreground/30" : "text-rose-500")}
         >
           <span className="text-[10px] font-black uppercase tracking-widest">
-            Eliminar
+            {isRecarga ? "FIJO" : "Eliminar"}
           </span>
-          <Trash2 className="w-4 h-4" />
+          {!isRecarga && <Trash2 className="w-4 h-4" />}
         </motion.div>
       </div>
 
       <motion.div
         drag="x"
-        dragConstraints={{ left: -120, right: 120 }}
+        dragConstraints={{ left: isRecarga ? 0 : -120, right: 120 }}
         dragElastic={0.2}
         onDragEnd={onDragEnd}
         style={{ x }}
@@ -384,12 +380,7 @@ function CategoryItem({
               <IconComponent className="w-5 h-5 stroke-[2.5]" />
             </div>
             <div>
-              <h3 className="font-bold text-sm tracking-tight">{cat.name}</h3>
-              <span
-                className="text-[8px] font-black uppercase tracking-[0.1em] px-1.5 py-0.5 rounded-sm border bg-rose-500/10 text-rose-500 border-rose-500/20"
-              >
-                GASTO
-              </span>
+              <h3 className="font-bold text-sm tracking-tight uppercase leading-none">{cat.name}</h3>
             </div>
           </div>
         </NeoCard>

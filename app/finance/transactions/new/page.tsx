@@ -16,7 +16,7 @@ export default async function NewTransactionPage() {
       recentAccountIds={data.recentAccountIds}
       accounts={data.accounts}
       evStats={data.evStats}
-      vehicles={data.vehicles as any}
+      vehicles={data.vehicles as { id: string; brand: string; model: string; batteryCapacity: number; degradation: number }[]}
       lastOdo={data.lastOdo}
     />
   );
