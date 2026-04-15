@@ -32,6 +32,17 @@ interface Vehicle {
   degradation: number;
 }
 
+interface EVStats {
+  total: number;
+  count: number;
+  transactions: {
+    id: string;
+    amount: number;
+    description: string | null;
+    date: string;
+  }[];
+}
+
 interface TransactionFormProps {
   categories: Category[];
   recentIds: string[];
@@ -39,7 +50,7 @@ interface TransactionFormProps {
   accounts: BankAccountOption[];
   vehicles: Vehicle[];
   lastOdo?: number;
-  evStats?: any;
+  evStats?: EVStats;
 }
 
 export function TransactionForm({

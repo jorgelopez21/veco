@@ -26,6 +26,17 @@ interface BankAccountOption {
   balance: number;
 }
 
+interface EVStats {
+  total: number;
+  count: number;
+  transactions: {
+    id: string;
+    amount: number;
+    description: string | null;
+    date: string;
+  }[];
+}
+
 interface EditTransactionFormProps {
   id: string;
   transaction: {
@@ -42,7 +53,7 @@ interface EditTransactionFormProps {
   recentAccountIds: string[];
   accounts: BankAccountOption[];
   vehicles: { id: string; brand: string; model: string; batteryCapacity: number; degradation: number }[];
-  evStats?: any;
+  evStats?: EVStats;
 }
 
 export function EditTransactionForm({
