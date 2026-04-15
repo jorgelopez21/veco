@@ -10,23 +10,31 @@ export async function deleteAccount() {
     return { success: false, error: "No autorizado" };
   }
 
+  const userId = session.user.id;
+
   // Protección: No permitir eliminar el usuario de demo/bypass
-  if (session.user.id === "clx-demo-user-id-veco" || session.user.email === "contacto@minube.dev") {
+  if (userId === "clx-demo-user-id-veco" || session.user.email === "contacto@minube.dev") {
     return { success: false, error: "No se permite eliminar el usuario de demostración" };
   }
 
+  // Purge all caches BEFORE deletion so stale data isn't served on next login
+  revalidateTag(`categories-${userId}`);
+  revalidateTag(`accounts-${userId}`);
+  revalidateTag(`transactions-${userId}`);
+  revalidateTag(`vehicles-${userId}`);
+  revalidateTag(`dashboard-${userId}`);
+  revalidatePath("/finance");
+
   try {
-    // Usamos deleteMany para evitar que Prisma lance error si el usuario no existe
     await prisma.user.deleteMany({
-      where: { id: session.user.id },
+      where: { id: userId },
     });
   } catch (error) {
     console.error("Error al eliminar cuenta:", error);
     return { success: false, error: "Error al eliminar la cuenta" };
   }
 
-  // signOut lanza un error interno (NEXT_REDIRECT) para manejar la redirección.
-  // Debe llamarse FUERA del bloque try/catch para que Next.js lo capture correctamente.
+  // signOut must be called OUTSIDE try/catch — it throws NEXT_REDIRECT internally
   await signOut({ redirectTo: "/login" });
   return { success: true };
 }

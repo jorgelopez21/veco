@@ -61,7 +61,16 @@ export async function createVehicle(data: {
     revalidateTag(`vehicles-${userId}`, "max");
     revalidatePath("/finance/vehicles");
     revalidatePath("/finance/transactions/new");
-    return { success: true, vehicle };
+    return { 
+      success: true, 
+      vehicle: {
+        ...vehicle,
+        batteryCapacity: Number(vehicle.batteryCapacity),
+        degradation: Number(vehicle.degradation),
+        createdAt: vehicle.createdAt.toISOString(),
+        updatedAt: vehicle.updatedAt.toISOString(),
+      }
+    };
   } catch (error) {
     console.error("Error creating vehicle:", error);
     return { error: "Error al crear el vehículo" };
@@ -90,7 +99,16 @@ export async function updateVehicle(id: string, data: {
 
     revalidateTag(`vehicles-${userId}`, "max");
     revalidatePath("/finance/vehicles");
-    return { success: true, vehicle };
+    return { 
+      success: true, 
+      vehicle: {
+        ...vehicle,
+        batteryCapacity: Number(vehicle.batteryCapacity),
+        degradation: Number(vehicle.degradation),
+        createdAt: vehicle.createdAt.toISOString(),
+        updatedAt: vehicle.updatedAt.toISOString(),
+      }
+    };
   } catch {
     return { error: "Error al actualizar el vehículo" };
   }

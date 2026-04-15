@@ -3,13 +3,13 @@
 :root {
   /* Default to Dark Mode (Veco Aesthetic) */
   --background: #09090b;
-  --foreground: #fafafa;
+  --foreground: #ffffff;
 
   --card: #18181b;
-  --card-foreground: #fafafa;
+  --card-foreground: #ffffff;
 
   --popover: #09090b;
-  --popover-foreground: #fafafa;
+  --popover-foreground: #ffffff;
 
   --primary: #10b981;
   /* Emerald-500 */
@@ -17,17 +17,17 @@
 
   --secondary: #f43f5e;
   /* Rose-500 */
-  --secondary-foreground: #fafafa;
+  --secondary-foreground: #ffffff;
 
   --muted: #27272a;
-  --muted-foreground: #a1a1aa;
+  --muted-foreground: #e4e4e7;
 
   --accent: #6366f1;
   /* Indigo-500 */
-  --accent-foreground: #fafafa;
+  --accent-foreground: #ffffff;
 
   --destructive: #ef4444;
-  --destructive-foreground: #fafafa;
+  --destructive-foreground: #ffffff;
 
   --border: #27272a;
   --input: #27272a;
@@ -98,3 +98,22 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
     display: none;
   }
 }
+
+@utility scrollbar-thin {
+  scrollbar-width: thin;
+  &::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+  }
+  &::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.2);
+  }
+}
+

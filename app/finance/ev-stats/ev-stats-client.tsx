@@ -427,7 +427,7 @@ export function EVStatsClient({
                       dataKey="id"
                       axisLine={false}
                       tickLine={false}
-                      tick={{ fill: "#999", fontSize: 10, fontWeight: 900 }}
+                      tick={{ fill: "#d1d1d6", fontSize: 10, fontWeight: 900 }}
                       tickFormatter={(id) => chartData.find(d => d.id === id)?.dateLabel || ""}
                       dy={10}
                     />
@@ -435,13 +435,13 @@ export function EVStatsClient({
                       axisLine={false}
                       tickLine={false}
                       domain={[0, 120]}
-                      tick={{ fill: "#999", fontSize: 10, fontWeight: 900 }}
+                      tick={{ fill: "#d1d1d6", fontSize: 10, fontWeight: 900 }}
                       label={{ 
                         value: 'Eficiencia (%)', 
                         angle: -90, 
                         position: 'insideLeft',
                         offset: 10,
-                        style: { fill: '#999', fontSize: 10, fontWeight: 900, textTransform: 'uppercase' }
+                        style: { fill: '#d1d1d6', fontSize: 10, fontWeight: 900, textTransform: 'uppercase' }
                       }}
                     />
                     <Tooltip
@@ -453,7 +453,7 @@ export function EVStatsClient({
                           return (
                             <div className="bg-zinc-900/95 backdrop-blur-md border border-white/10 p-3 rounded-2xl shadow-2xl">
                               <div className="flex items-center justify-between gap-4 mb-2">
-                                <p className="text-[10px] font-black text-white/40 uppercase">
+                                <p className="text-[10px] font-black text-white/60 uppercase">
                                   {data.date}
                                 </p>
                                 <span className={cn(
@@ -649,7 +649,7 @@ export function EVStatsClient({
       ) : (
         <NeoCard className="p-12 bg-white/5 border-white/10 rounded-[2rem] flex flex-col items-center justify-center text-center gap-4">
           <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center">
-            <Info className="w-8 h-8 text-muted-foreground/30" />
+            <Info className="w-8 h-8 text-muted-foreground/60" />
           </div>
           <div className="flex flex-col gap-1">
             <p className="text-sm font-bold text-white uppercase tracking-tight">

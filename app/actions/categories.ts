@@ -13,6 +13,9 @@ export async function createCategory(data: {
   if (!userId) return { error: "User not found" };
 
   try {
+    const count = await prisma.category.count({ where: { userId } });
+    if (count >= 10) return { error: "Límite alcanzado: máximo 10 categorías" };
+
     const category = await prisma.category.create({
       data: {
         ...data,

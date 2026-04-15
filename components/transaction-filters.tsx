@@ -29,8 +29,7 @@ export function TransactionFilters({
   const currentCategory = searchParams.get("category") || "ALL";
   const currentAccount = searchParams.get("account") || "ALL";
   
-  const defaultVehicleId = vehicles[0]?.id || "ALL";
-  const currentVehicle = searchParams.get("vehicleId") || defaultVehicleId;
+  const currentVehicle = searchParams.get("vehicleId") || "ALL";
 
   const from = searchParams.get("from") || format(new Date(), "yyyy-MM-dd");
   const to = searchParams.get("to") || format(new Date(), "yyyy-MM-dd");
@@ -132,10 +131,7 @@ export function TransactionFilters({
       </div>
 
       {/* Selects: Category, Account - Dependent on Vehicle */}
-      <div className={cn(
-        "grid grid-cols-2 gap-2 transition-all duration-300",
-        currentVehicle === "ALL" ? "opacity-30 pointer-events-none grayscale" : "opacity-100"
-      )}>
+      <div className="grid grid-cols-2 gap-2 transition-all duration-300">
         <div className="relative">
           <select
             value={currentCategory}

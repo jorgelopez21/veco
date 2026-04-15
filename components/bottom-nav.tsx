@@ -1,6 +1,7 @@
 "use client";
 
-import { Home, List, User, Zap } from "lucide-react";
+import { Home, List, Settings, Zap } from "lucide-react";
+import { motion } from "framer-motion";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
@@ -29,8 +30,8 @@ export function BottomNav() {
     },
     {
       href: "/finance/profile",
-      label: "Profile",
-      icon: User,
+      label: "Settings",
+      icon: Settings,
     },
   ];
 
@@ -44,16 +45,36 @@ export function BottomNav() {
               key={route.href}
               href={route.href}
               className={cn(
-                "flex flex-col items-center justify-center w-full h-full gap-1 transition-colors",
+                "flex flex-col items-center justify-center w-full h-full gap-1 transition-colors relative group",
                 isActive
                   ? "text-primary"
                   : "text-muted-foreground hover:text-foreground",
               )}
             >
-              <route.icon
-                className={cn("w-6 h-6", isActive && "fill-current/20")}
-              />
-              <span className="text-[10px] font-medium">{route.label}</span>
+              <div className="relative">
+                {isActive && (
+                  <motion.div
+                    layoutId="nav-pill"
+                    className="absolute -inset-2 bg-primary/10 rounded-xl -z-10"
+                    transition={{ type: "spring", bounce: 0.3, duration: 0.6 }}
+                  />
+                )}
+                <motion.div
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.9 }}
+                  className="relative z-10"
+                >
+                  <route.icon
+                    className={cn("w-6 h-6", isActive && "fill-current/20")}
+                  />
+                </motion.div>
+              </div>
+              <span className={cn(
+                "text-[9px] font-black uppercase tracking-tighter transition-all",
+                isActive ? "opacity-100" : "opacity-50 group-hover:opacity-100"
+              )}>
+                {route.label}
+              </span>
             </Link>
           );
         })}

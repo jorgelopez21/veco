@@ -13,19 +13,21 @@ export function SourceSelector({
   onAccountChange,
 }: SourceSelectorProps) {
   return (
-    <div className="flex flex-wrap gap-2">
+    <div className="grid grid-cols-2 xs:grid-cols-2 sm:grid-cols-3 gap-3 max-h-[320px] overflow-y-auto pr-2 pt-1 scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent custom-scrollbar">
       {accounts.map((account) => (
         <NeoButton
           key={account.id}
           type="button"
-          size="sm"
+          size="lg"
           variant={selectedAccountId === account.id ? "primary" : "secondary"}
           onClick={() => {
             onAccountChange(account.id);
           }}
           className={cn(
-            "h-11 px-5 text-sm font-black rounded-2xl flex-1 min-w-[100px] uppercase tracking-tight",
-            selectedAccountId === account.id ? "shadow-lg scale-[1.02]" : "opacity-60",
+            "h-16 px-4 text-xs font-black rounded-2xl flex flex-col items-center justify-center text-center uppercase tracking-tighter leading-tight transition-all",
+            selectedAccountId === account.id 
+              ? "shadow-[0_10px_20px_-5px_rgba(255,255,255,0.1)] scale-[1.02] border-primary" 
+              : "opacity-70 hover:opacity-100 bg-white/5 border-white/5",
           )}
         >
           {account.name}
@@ -34,3 +36,6 @@ export function SourceSelector({
     </div>
   );
 }
+
+
+

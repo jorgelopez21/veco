@@ -1,32 +1,23 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import { motion } from "framer-motion";
 import { useRouter, useSearchParams } from "next/navigation";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
-import { Calendar as CalendarIcon, ArrowLeft, Trash2 } from "lucide-react";
+import { Calendar as CalendarIcon, ArrowLeft, Trash2, BatteryCharging, ChevronDown } from "lucide-react";
 import { NeoButton } from "@/components/ui/neo-button";
-import { NeoCard } from "@/components/ui/neo-card";
-import { TransactionTypeToggle } from "@/components/transaction-type-toggle";
 import { CategorySelector } from "@/components/category-selector";
-import Link from "next/link";
+import { SourceSelector } from "@/components/source-selector";
 import {
   updateTransaction,
-  getEVStatsInRange,
   type Category,
 } from "@/app/actions/transactions";
 import { deleteTransaction } from "@/app/actions/delete-transaction";
 import { Toast } from "@/components/ui/toast";
 import { ConfirmToast } from "@/components/ui/confirm-toast";
 import { TransactionType } from "@prisma/client";
-import { SourceSelector } from "@/components/source-selector";
 import { parseInputDate, formatToInputDate } from "@/lib/date-utils";
-
-interface EVTransaction {
-  id: string;
-  amount: number;
-  description: string | null;
-  date: Date | string;
-}
+import Link from "next/link";
 
 interface BankAccountOption {
   id: string;
@@ -44,205 +35,150 @@ interface EditTransactionFormProps {
     accountId?: string | null;
     description?: string | null;
     date: string | Date;
-    source?: string;
+    vehicleId?: string | null;
   };
   categories: Category[];
   recentIds: string[];
   recentAccountIds: string[];
   accounts: BankAccountOption[];
-  evStats?: number | { total: number; count: number; transactions: EVTransaction[] };
+  vehicles: { id: string; brand: string; model: string; batteryCapacity: number; degradation: number }[];
 }
 
 export function EditTransactionForm({
   id,
   transaction,
   categories: allCategories,
-  recentIds,
   recentAccountIds,
   accounts,
-  evStats = 0,
+  vehicles = [],
 }: EditTransactionFormProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const from = searchParams.get("from");
-  const redirectTarget =
-    from === "activity" ? "/finance/transactions" : "/finance";
+  const redirectTarget = from === "activity" ? "/finance/transactions" : "/finance";
+  
+  const dateInputRef = useRef<HTMLInputElement>(null);
 
   const [amount, setAmount] = useState(transaction.amount.toString());
-  const [description, setDescription] = useState(transaction.description || "");
-  const [type, setType] = useState<TransactionType>(
-    transaction.type as TransactionType,
-  );
-  const [categoryId, setCategoryId] = useState<string | undefined>(
-    transaction.categoryId || undefined,
-  );
-  const [accountId, setAccountId] = useState<string | undefined>(
-    transaction.accountId || accounts?.[0]?.id,
-  );
-  const [targetDebt, setTargetDebt] = useState<string | null>(
-    accounts
-      .find(
-        (acc) =>
-          acc.type === "CREDIT" &&
-          acc.name.toUpperCase() ===
-            (transaction.description || "").toUpperCase(),
-      )
-      ?.name.toUpperCase() || null,
-  );
+  const [type] = useState<TransactionType>(transaction.type as TransactionType);
+  const [categoryId, setCategoryId] = useState<string | undefined>(transaction.categoryId || undefined);
+  const [accountId, setAccountId] = useState<string | undefined>(transaction.accountId || recentAccountIds[0] || accounts[0]?.id);
+  const [vehicleId, setVehicleId] = useState<string | undefined>(transaction.vehicleId || vehicles[0]?.id);
   const [date, setDate] = useState(new Date(transaction.date));
-
-  const [billingPeriodStart, setBillingPeriodStart] = useState<string>(() => {
-    const d = new Date();
-    return format(new Date(d.getFullYear(), d.getMonth() - 1, 1), "yyyy-MM-dd");
-  });
-  const [billingPeriodEnd, setBillingPeriodEnd] = useState<string>(() => {
-    const d = new Date();
-    return format(new Date(d.getFullYear(), d.getMonth(), 0), "yyyy-MM-dd");
-  });
-  const [splitEpm, setSplitEpm] = useState(false);
-  const [evStatsData, setEvStatsData] = useState<{
-    total: number;
-    count: number;
-    transactions: EVTransaction[];
-  }>(() => {
-    if (evStats && typeof evStats === "object") return evStats;
-    return { total: Number(evStats) || 0, count: 0, transactions: [] };
-  });
-
-  const [isSaving, setIsSaving] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
-  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
-
-  // EV Charging State
-  const [isEV, setIsEV] = useState(false);
+  const [description, setDescription] = useState("");
+  const [isManualKwh, setIsManualKwh] = useState(false);
+  
+  // EV State
   const [odo, setOdo] = useState("");
   const [socIni, setSocIni] = useState("");
   const [socFin, setSocFin] = useState("100");
-  const [evOrigin, setEvOrigin] = useState<
-    "Casa" | "Pública Lenta" | "Pública Rápida"
-  >("Casa");
+  const [evOrigin, setEvOrigin] = useState<"Casa" | "Pública Lenta" | "Pública Rápida">("Casa");
   const [kwhGrid, setKwhGrid] = useState("");
+  
+  const [isSaving, setIsSaving] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+  const [toastState, setToastState] = useState<{ message: string; type: "success" | "error"; visible: boolean }>({ message: "", type: "success", visible: false });
 
+  const currentCategory = allCategories.find(c => c.id === categoryId);
+  const isRecarga = currentCategory?.name?.toLowerCase()?.includes("recarga");
+
+  const todayStr = formatToInputDate(new Date());
+
+  // Parse Metadata on mount
   useEffect(() => {
     if (transaction.description?.includes("EV:")) {
-      setIsEV(true);
-      const descLine = transaction.description;
-      const parts = descLine.split("|");
-
-      const evTag = parts.find((p) => p.includes("EV:"));
+      const parts = transaction.description.split("|");
+      
+      const evTag = parts.find(p => p.includes("EV:"));
       if (evTag) {
         const origin = evTag.replace("EV:", "").trim();
-        if (
-          origin === "Casa" ||
-          origin === "Pública Lenta" ||
-          origin === "Pública Rápida"
-        ) {
-          setEvOrigin(origin);
+        if (["Casa", "Pública Lenta", "Pública Rápida"].includes(origin)) {
+          setEvOrigin(origin as "Casa" | "Pública Lenta" | "Pública Rápida");
         }
       }
 
-      const odoPart = parts.find((p) => p.includes("Odo:"));
+      const odoPart = parts.find(p => p.includes("Odo:"));
       if (odoPart) setOdo(odoPart.replace("Odo:", ""));
 
-      const socPart = parts.find((p) => p.includes("%->"));
+      const socPart = parts.find(p => p.includes("%->"));
       if (socPart) {
         const cleanSoc = socPart.replace("%", "").trim();
         const [ini, fin] = cleanSoc.split("->");
-        setSocIni(ini);
-        setSocFin(fin.replace("%", ""));
+        setSocIni(ini.trim());
+        setSocFin(fin.replace("%", "").trim());
       }
 
-      const kwhPart = parts.find((p) => p.includes("kWh"));
+      const kwhPart = parts.find(p => p.includes("kWh"));
       if (kwhPart) setKwhGrid(kwhPart.replace("kWh", "").trim());
 
-      // Try to extract the original description
-      const extra = parts
-        .filter(
-          (p) =>
-            !p.includes("EV:") &&
-            !p.includes("Odo:") &&
-            !p.includes("%->") &&
-            !p.includes("kWh"),
-        )
-        .join("|")
-        .trim();
-      if (extra) {
-        setDescription(extra.startsWith(" | ") ? extra.substring(3) : extra);
+      const lastPipeIndex = transaction.description.lastIndexOf("|");
+      const kwhIndex = transaction.description.indexOf("kWh");
+      if (lastPipeIndex > kwhIndex) {
+        setDescription(transaction.description.substring(lastPipeIndex + 1).trim());
+      } else {
+        setDescription("");
       }
+    } else {
+      setDescription(transaction.description || "");
     }
   }, [transaction.description]);
 
-  const [toastState, setToastState] = useState<{
-    message: string;
-    type: "success" | "error";
-    visible: boolean;
-  }>({
-    message: "",
-    type: "success",
-    visible: false,
-  });
 
-  const showToast = (
-    message: string,
-    type: "success" | "error" = "success",
-  ) => {
-    setToastState({ message, type, visible: true });
-  };
-
-  useEffect(() => {
-    if (
-      billingPeriodStart &&
-      billingPeriodEnd &&
-      (splitEpm || targetDebt === "EPM")
-    ) {
-      const fetchEVInRange = async () => {
-        const data = await getEVStatsInRange(
-          new Date(billingPeriodStart),
-          new Date(billingPeriodEnd),
-        );
-        setEvStatsData(data);
-      };
-      fetchEVInRange();
-    }
-  }, [billingPeriodStart, billingPeriodEnd, splitEpm, targetDebt]);
-
-  const handleQuickDate = (d: "today" | "yesterday") => {
-    const newDate = new Date();
-    if (d === "yesterday") newDate.setDate(newDate.getDate() - 1);
-    setDate(newDate);
-  };
 
   const handleSave = async () => {
-    if (!categoryId || !amount) {
-      showToast("Selecciona una categoría y monto", "error");
+    if (!vehicleId || !categoryId || !amount) {
+      setToastState({ message: "Faltan datos obligatorios", type: "error", visible: true });
       return;
     }
+
+    const selectedVehicle = vehicles.find(v => v.id === vehicleId);
+    const battCap = selectedVehicle?.batteryCapacity || 60;
+    
+    if (isRecarga) {
+      if (Number(kwhGrid) > battCap * 2) {
+        setToastState({ message: `kWh red no puede superar el 200% de la capacidad (${battCap * 2} kWh)`, type: "error", visible: true });
+        return;
+      }
+      if (Number(socIni) > 99) {
+         setToastState({ message: "SOC Inicial máximo 99%", type: "error", visible: true });
+         return;
+      }
+      if (Number(socFin) > 100) {
+         setToastState({ message: "SOC Final máximo 100%", type: "error", visible: true });
+         return;
+      }
+    }
+    
     setIsSaving(true);
     try {
-      let finalDescription = description;
-      if (isEV) {
-        const evData = `EV:${evOrigin}|Odo:${odo || "0"}|${socIni || "0"}%->${socFin || "0"}%|${kwhGrid || "0"}kWh`;
-        finalDescription = description ? `${evData} | ${description}` : evData;
-      }
+      const evData = `EV:${evOrigin}|Odo:${odo || "0"}|${socIni || "0"}%->${socFin || "0"}%|${kwhGrid || "0"}kWh`;
+      const finalDesc = isRecarga ? (description ? `${evData} | ${description}` : evData) : (description || null);
 
       const res = await updateTransaction(id, {
         amount: Number(amount),
         type,
         categoryId,
         accountId: accountId || null,
-        description: finalDescription || null,
+        description: finalDesc,
         date,
+        vehicleId: vehicleId || null,
+        odo: isRecarga ? Number(odo) : null,
+        socIni: isRecarga ? Number(socIni) : null,
+        socFin: isRecarga ? Number(socFin) : null,
+        kwhGrid: isRecarga ? Number(kwhGrid) : null,
+        evOrigin: isRecarga ? evOrigin : null,
       });
 
       if (res.success) {
-        showToast("¡Transacción actualizada!");
-        setTimeout(() => router.push(redirectTarget), 1000);
+        setToastState({ message: "¡Actualizado con éxito!", type: "success", visible: true });
+        setTimeout(() => router.push(redirectTarget), 800);
       } else {
-        showToast(res.error || "No se pudo actualizar", "error");
+        setToastState({ message: res.error || "No se pudo actualizar", type: "error", visible: true });
       }
     } catch (e) {
       console.error(e);
-      showToast("Ocurrió un error inesperado", "error");
+      setToastState({ message: "Error inesperado", type: "error", visible: true });
     } finally {
       setIsSaving(false);
     }
@@ -253,95 +189,56 @@ export function EditTransactionForm({
     try {
       const result = await deleteTransaction(id);
       if (result.success) {
-        showToast("Transacción eliminada");
-        setTimeout(() => router.push(redirectTarget), 1000);
+        setToastState({ message: "Eliminado con éxito", type: "success", visible: true });
+        setTimeout(() => router.push(redirectTarget), 800);
       } else {
-        showToast(result.error || "No se pudo eliminar", "error");
-        setIsConfirmOpen(false);
+        setToastState({ message: result.error || "Error al eliminar", type: "error", visible: true });
       }
     } catch (e) {
       console.error(e);
-      showToast("Ocurrió un error inesperado", "error");
-      setIsConfirmOpen(false);
+      setToastState({ message: "Error inesperado", type: "error", visible: true });
     } finally {
       setIsDeleting(false);
+      setIsConfirmOpen(false);
     }
   };
 
-  const categories = allCategories
-    .filter((c) => c.type === type)
-    .sort((a, b) => {
-      const indexA = recentIds.indexOf(a.id);
-      const indexB = recentIds.indexOf(b.id);
-      if (indexA === -1 && indexB === -1) return 0;
-      if (indexA === -1) return 1;
-      if (indexB === -1) return -1;
-      return indexA - indexB;
-    });
-
-  const sortedAccounts = [...accounts].sort((a, b) => {
-    const indexA = recentAccountIds.indexOf(a.id);
-    const indexB = recentAccountIds.indexOf(b.id);
-    if (indexA === -1 && indexB === -1) return 0;
-    if (indexA === -1) return 1;
-    if (indexB === -1) return -1;
-    return indexA - indexB;
-  });
-
-  const handleCategorySelect = (id: string) => {
-    const cat = allCategories.find((c) => c.id === id);
-    if (cat?.name !== "Pago Préstamo") {
-      setTargetDebt(null);
-      // Only clear description if it was a debt name
-      const isDebt = accounts.some(
-        (acc) =>
-          acc.type === "CREDIT" &&
-          acc.name.toUpperCase() === description.toUpperCase(),
-      );
-      if (isDebt) {
-        setDescription("");
-      }
-    }
-    setCategoryId(id);
-  };
+  const EV_ORIGINS = [
+    { value: "Casa", label: "CASA", icon: "🏠" },
+    { value: "Pública Lenta", label: "LENTA", icon: "🔌" },
+    { value: "Pública Rápida", label: "RÁPIDA", icon: "⚡" }
+  ];
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col">
-      <Toast
-        isVisible={toastState.visible}
-        message={toastState.message}
-        type={toastState.type}
-        onClose={() => setToastState((prev) => ({ ...prev, visible: false }))}
+    <div className="min-h-screen bg-[#060608] text-white flex flex-col font-sans">
+      <Toast 
+        isVisible={toastState.visible} 
+        message={toastState.message} 
+        type={toastState.type} 
+        onClose={() => setToastState(p=>({...p, visible: false}))} 
       />
 
       <ConfirmToast
         isVisible={isConfirmOpen}
         message="¿Eliminar esta transacción?"
-        description="No te preocupes, el monto se ajustará automáticamente en tu saldo. Esta acción no se puede deshacer."
+        description="Se ajustará automáticamente tu saldo."
         onClose={() => setIsConfirmOpen(false)}
         onConfirm={handleDelete}
         isLoading={isDeleting}
       />
 
       {/* Header */}
-      <header className="p-4 flex items-center justify-between gap-3">
-        <div className="flex items-center gap-3 min-w-0">
-          <Link href={redirectTarget}>
-            <NeoButton
-              variant="secondary"
-              className="gap-1.5 h-9 px-3 rounded-xl shadow-sm border-white/5 bg-white/5 text-[10px] font-black uppercase tracking-widest shrink-0"
-            >
-              <ArrowLeft className="w-3.5 h-3.5" />
-              Volver
-            </NeoButton>
-          </Link>
-          <h1 className="text-lg font-black italic tracking-tighter uppercase truncate">
-            Editar Transacción
-          </h1>
-        </div>
-        <NeoButton
-          size="icon"
-          variant="ghost"
+      <header className="px-5 pt-8 pb-4 flex items-center justify-between sticky top-0 bg-[#060608]/80 backdrop-blur-xl z-50 border-b border-white/5">
+        <Link href={redirectTarget}>
+          <NeoButton variant="secondary" className="h-9 px-4 rounded-xl bg-white/5 border-white/5 text-[10px] font-black uppercase tracking-widest hover:bg-white/10 transition-all shrink-0">
+            <ArrowLeft className="w-3.5 h-3.5 mr-2" />
+            Volver
+          </NeoButton>
+        </Link>
+        <span className="text-[10px] font-black tracking-[0.4em] uppercase opacity-40 truncate px-4">Modificar Gasto</span>
+        <NeoButton 
+          size="icon" 
+          variant="ghost" 
           className="text-rose-500 h-9 w-9 shrink-0 bg-rose-500/5 border border-rose-500/10 rounded-xl"
           onClick={() => setIsConfirmOpen(true)}
         >
@@ -349,465 +246,216 @@ export function EditTransactionForm({
         </NeoButton>
       </header>
 
-      <div className="flex-1 p-5 flex flex-col gap-5 pb-32">
-        <TransactionTypeToggle value={type} onChange={setType} />
+      <div className="flex-1 px-5 flex flex-col gap-10 pt-8 pb-32 max-w-7xl mx-auto w-full">
+        
+        {/* Vehicle Selection Section */}
+        <div className="flex flex-col gap-8">
+           <section className="flex flex-col items-center gap-4">
+              <span className="text-[10px] font-black text-primary/80 uppercase tracking-[0.5em]">Vehículo Asociado</span>
+              <div className="relative w-full max-w-xs group">
+                <select 
+                  value={vehicleId} onChange={e => setVehicleId(e.target.value)}
+                  className="w-full bg-white/5 border border-white/10 rounded-2xl h-14 px-6 text-[11px] font-black text-white uppercase appearance-none outline-none hover:bg-white/10 hover:border-primary/30 transition-all text-center shadow-2xl cursor-pointer"
+                >
+                  {vehicles.map(v => <option key={v.id} value={v.id} className="bg-[#09090b] text-white">{v.brand} {v.model}</option>)}
+                </select>
+                <ChevronDown className="absolute right-5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20 group-hover:text-primary transition-colors pointer-events-none" />
+              </div>
+           </section>
 
-        <div className="flex flex-col items-center gap-1">
-          <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">
-            Monto
-          </span>
-          <div className="relative w-full max-w-[200px] mx-auto">
-            <span className="absolute left-0 top-1/2 -translate-y-1/2 text-2xl font-bold text-muted-foreground/50">
-              $
-            </span>
-            <input
-              type="text"
-              inputMode="numeric"
-              autoFocus
-              value={
-                amount
-                  ? Number(amount).toLocaleString("es-US", {
-                      maximumFractionDigits: 0,
-                    })
-                  : ""
-              }
-              onChange={(e) => {
-                const val = e.target.value.replace(/[^0-9]/g, "");
-                if (val.length <= 8) setAmount(val);
-              }}
-              placeholder="0"
-              className="w-full bg-transparent text-center text-4xl font-black border-none outline-none placeholder:text-muted-foreground/20 focus:ring-0"
-            />
+           <div className="flex flex-col items-center justify-center p-12 bg-white/[0.03] rounded-[3rem] border border-white/10 shadow-3xl group hover:border-primary/20 transition-all duration-500 focus-within:border-primary/40">
+            <span className="text-xs md:text-sm font-black text-primary/70 uppercase tracking-[0.4em] mb-4">Monto a Modificar</span>
+            <div className="flex items-center justify-center w-full">
+              <span className="text-3xl font-black text-primary/20 mr-2">$</span>
+              <input
+                type="text" inputMode="numeric" autoFocus
+                value={amount ? Number(amount).toLocaleString('es-US') : ""}
+                onChange={e => {
+                  const val = e.target.value.replace(/[^0-9]/g, "");
+                  if (val.length <= 8) {
+                    setAmount(val);
+                    if (isRecarga && !isManualKwh) {
+                      const divisor = evOrigin === "Casa" ? 950 : 1800;
+                      setKwhGrid((Number(val) / divisor).toFixed(1));
+                    }
+                  }
+                }}
+                placeholder="0"
+                className="bg-transparent border-none p-0 text-6xl md:text-8xl font-black text-white outline-none placeholder:text-white/20 text-center w-full max-w-[350px] md:max-w-[600px] tracking-tighter"
+              />
+            </div>
+            <span className="text-[10px] md:text-xs font-bold text-white/40 mt-4 uppercase tracking-widest">Solo números enteros (Máx 8 dígitos)</span>
           </div>
         </div>
 
-        <div className="flex flex-col gap-3">
-          <div className="flex justify-between items-center">
-            <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">
-              Categoría
-            </span>
-            <Link href="/finance/categories">
-              <button className="text-[10px] text-primary font-black uppercase tracking-widest py-0.5 px-2 bg-primary/10 rounded-md">
-                Editar
-              </button>
-            </Link>
+        {/* Categories Section */}
+        <div className="flex flex-col gap-4">
+          <div className="flex items-center px-4 border-l-2 border-primary/20">
+            <span className="text-[10px] font-black uppercase tracking-widest text-white/60">Seleccionar Categoría</span>
           </div>
           <CategorySelector
-            categories={categories}
+            categories={allCategories.filter(c => c.type === type)}
             selectedId={categoryId}
-            onSelect={handleCategorySelect}
+            onSelect={setCategoryId}
           />
         </div>
 
-        {/* EV Data Section */}
-        {allCategories.find((c) => c.id === categoryId)?.name &&
-          ["transporte", "deepal", "recarga", "vehiculo"].some((k) =>
-            allCategories
-              .find((c) => c.id === categoryId)
-              ?.name.toLowerCase()
-              .includes(k),
-          ) && (
-            <div className="flex flex-col gap-3 p-4 bg-white/5 rounded-3xl border border-white/10 animate-in fade-in slide-in-from-top-4 duration-300">
-              <div className="flex items-center justify-between">
-                <div className="flex flex-col gap-0.5">
-                  <span className="text-[10px] font-black text-emerald-500 uppercase tracking-widest">
-                    🔌 Detalles de Recarga
-                  </span>
-                  <span className="text-[8px] text-muted-foreground uppercase font-bold">
-                    Registrar Odo y % de batería
-                  </span>
+        {/* EV Section (Conditional) */}
+        {isRecarga && (
+          <div className="max-w-4xl mx-auto w-full animate-in slide-in-from-bottom-4 duration-700">
+             <section className="bg-emerald-500/10 rounded-[3.5rem] border border-emerald-500/20 p-10 md:p-14 flex flex-col gap-12 shadow-2xl relative overflow-hidden group/ev">
+                <div className="flex items-center gap-6 relative z-10">
+                   <div className="w-14 h-14 rounded-2xl bg-emerald-500 flex items-center justify-center shadow-lg shadow-emerald-500/40 group-hover/ev:scale-110 transition-transform">
+                      <BatteryCharging className="w-7 h-7 text-black" />
+                   </div>
+                   <h3 className="text-base font-black text-emerald-500 uppercase tracking-[0.6em]">Energía Eléctrica</h3>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => setIsEV(!isEV)}
-                  className={cn(
-                    "w-10 h-5 rounded-full p-1 transition-all duration-300",
-                    isEV ? "bg-emerald-500" : "bg-white/10",
-                  )}
-                >
-                  <div
-                    className={cn(
-                      "w-3 h-3 rounded-full bg-white transition-all transform duration-300",
-                      isEV ? "translate-x-5" : "translate-x-0",
-                    )}
-                  />
-                </button>
-              </div>
 
-              {isEV && (
-                <div className="flex flex-col gap-4 pt-2 border-t border-white/5 animate-in fade-in zoom-in-95 duration-200">
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="flex flex-col gap-1.5">
-                      <span className="text-[8px] font-black text-muted-foreground uppercase px-1">
-                        Odómetro
-                      </span>
-                      <input
-                        type="text"
-                        inputMode="numeric"
-                        placeholder="000000"
-                        value={odo}
-                        onChange={(e) => {
-                          const val = e.target.value.replace(/[^0-9]/g, "");
-                          if (val.length <= 6) setOdo(val);
-                        }}
-                        className="bg-white/5 border-none h-10 rounded-xl px-3 text-xs font-bold outline-none focus:ring-1 ring-emerald-500/30"
-                      />
-                    </div>
-                    <div className="flex flex-col gap-1.5">
-                      <span className="text-[8px] font-black text-muted-foreground uppercase px-1">
-                        Origen
-                      </span>
-                      <select
-                        value={evOrigin}
-                        onChange={(e) =>
-                          setEvOrigin(
-                            e.target.value as
-                              | "Casa"
-                              | "Pública Lenta"
-                              | "Pública Rápida",
-                          )
-                        }
-                        className="bg-zinc-900 border-none h-10 rounded-xl px-2 text-[10px] font-bold outline-none focus:ring-1 ring-emerald-500/30 text-white appearance-none"
-                      >
-                        <option value="Casa" className="bg-zinc-900 text-white">
-                          CASA
-                        </option>
-                        <option
-                          value="Pública Lenta"
-                          className="bg-zinc-900 text-white"
+                <div className="flex flex-col gap-6 relative z-10">
+                  <span className="text-[10px] font-black text-white/50 uppercase tracking-[0.4em] ml-2">Fuente de Carga</span>
+                  <div className="grid grid-cols-3 gap-6">
+                    {EV_ORIGINS.map(org => {
+                      const isSelected = evOrigin === org.value;
+                      return (
+                        <button key={org.value} type="button" onClick={() => setEvOrigin(org.value as "Casa" | "Pública Lenta" | "Pública Rápida")}
+                          className={cn(
+                            "relative flex flex-col items-center justify-center gap-4 h-36 rounded-[2.5rem] border transition-all duration-500",
+                            isSelected ? "bg-emerald-500 border-emerald-400 text-black shadow-3xl shadow-emerald-500/40 scale-[1.05]" : "bg-black/40 border-white/5 text-white/40 hover:bg-white/10 hover:border-white/10"
+                          )}
                         >
-                          PUBLICA LENTA
-                        </option>
-                        <option
-                          value="Pública Rápida"
-                          className="bg-zinc-900 text-white"
-                        >
-                          PUBLICA RÁPIDA
-                        </option>
-                      </select>
-                    </div>
-                    <div className="flex flex-col gap-1.5">
-                      <span className="text-[8px] font-black text-muted-foreground uppercase px-1">
-                        kWh Red
-                      </span>
-                      <input
-                        type="text"
-                        inputMode="decimal"
-                        pattern="[0-9]*[.,]?[0-9]*"
-                        placeholder="0.00"
-                        value={kwhGrid}
-                        onChange={(e) => {
-                          const val = e.target.value.replace(",", "."); // mobile fix
-                          if (val.length <= 5) setKwhGrid(val);
-                        }}
-                        className="bg-white/5 border-none h-10 rounded-xl px-3 text-xs font-bold outline-none focus:ring-1 ring-emerald-500/30"
-                      />
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="flex flex-col gap-1.5">
-                      <span className="text-[8px] font-black text-muted-foreground uppercase px-1">
-                        % Inicial
-                      </span>
-                      <div className="relative">
-                        <input
-                          type="text"
-                          inputMode="numeric"
-                          placeholder="0"
-                          maxLength={2}
-                          value={socIni}
-                          onChange={(e) => {
-                            const val = e.target.value.replace(/[^0-9]/g, "");
-                            const num = Math.min(99, Number(val));
-                            setSocIni(val === "" ? "" : String(num));
-                          }}
-                          className="w-full bg-white/5 border-none h-10 rounded-xl px-3 text-xs font-bold outline-none focus:ring-1 ring-emerald-500/30"
-                        />
-                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] opacity-30">
-                          %
-                        </span>
-                      </div>
-                    </div>
-                    <div className="flex flex-col gap-1.5">
-                      <span className="text-[8px] font-black text-muted-foreground uppercase px-1">
-                        % Final
-                      </span>
-                      <div className="relative">
-                        <input
-                          type="text"
-                          inputMode="numeric"
-                          placeholder="100"
-                          maxLength={3}
-                          value={socFin}
-                          onChange={(e) => {
-                            const val = e.target.value.replace(/[^0-9]/g, "");
-                            const num = Math.min(100, Number(val));
-                            setSocFin(val === "" ? "" : String(num));
-                          }}
-                          className="w-full bg-white/5 border-none h-10 rounded-xl px-3 text-xs font-bold outline-none focus:ring-1 ring-emerald-500/30"
-                        />
-                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] opacity-30">
-                          %
-                        </span>
-                      </div>
-                    </div>
+                          <span className="text-4xl">{org.icon}</span>
+                          <span className="text-[11px] font-black uppercase tracking-[0.2em]">{org.label}</span>
+                        </button>
+                      )
+                    })}
                   </div>
                 </div>
-              )}
-            </div>
-          )}
+                
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 relative z-10 pt-4">
+                  {[
+                    { label: "Odo (KM)", value: odo, setter: setOdo, placeholder: "0", icon: "KM" },
+                    { label: "kWh Red", value: kwhGrid, setter: setKwhGrid, placeholder: "0.0", icon: "⚡" },
+                    { label: "SOC I %", value: socIni, setter: setSocIni, placeholder: "0", icon: "▼", max: 99 },
+                    { label: "SOC F %", value: socFin, setter: setSocFin, placeholder: "100", icon: "▲", max: 100 }
+                  ].map(f => (
+                    <div key={f.label} className="flex flex-col gap-4">
+                      <span className="text-[10px] font-black text-white/60 uppercase tracking-widest ml-2">{f.label}</span>
+                      <div className="relative">
+                        <input type="text" inputMode="numeric" value={f.value}
+                          onChange={e => {
+                            let val = e.target.value;
+                            if (f.label.includes("kWh")) {
+                              val = val.replace(/[^0-9.]/g, "");
+                              setIsManualKwh(true);
+                            } else {
+                              val = val.replace(/[^0-9]/g, "");
+                              if (f.max && Number(val) > f.max) val = String(f.max);
+                              if (f.label.includes("SOC I") && val.length > 2) val = val.substring(0, 2);
+                            }
+                            f.setter(val);
+                          }}
+                          className="w-full bg-black/60 border border-white/10 h-16 rounded-2xl px-6 pr-14 text-sm font-black text-white outline-none focus:border-emerald-500 transition-all shadow-inner" 
+                          placeholder={f.placeholder} />
+                        <span className="absolute right-6 top-1/2 -translate-y-1/2 text-[10px] font-black text-white/30 uppercase">{f.icon}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+             </section>
+          </div>
+        )}
 
         {/* Source Selector */}
-        <SourceSelector
-          accounts={sortedAccounts}
-          selectedAccountId={accountId}
-          onAccountChange={setAccountId}
-        />
-        {/* Target Debt for Payments */}
-        {allCategories.find((c) => c.id === categoryId)?.name ===
-          "Pago Préstamo" && (
-          <div className="flex flex-col gap-3 p-4 bg-white/5 rounded-3xl border border-white/10 animate-in fade-in slide-in-from-top-4 duration-300">
-            <span className="text-[10px] font-black text-amber-500 uppercase tracking-widest">
-              ¿Qué deuda estás pagando?
-            </span>
-            <div className="grid grid-cols-2 gap-2">
-              {accounts
-                .filter((acc) => acc.type === "CREDIT")
-                .map((acc, idx) => (
-                  <NeoButton
-                    key={acc.id}
-                    variant={
-                      targetDebt === acc.name.toUpperCase()
-                        ? "primary"
-                        : "secondary"
-                    }
-                    className={cn(
-                      "h-12 text-[10px] font-black uppercase rounded-2xl",
-                      targetDebt === acc.name.toUpperCase() &&
-                        (idx % 2 === 0
-                          ? "bg-amber-500 text-black border-none"
-                          : "bg-blue-500 text-black border-none"),
-                    )}
-                    onClick={() => {
-                      setTargetDebt(acc.name.toUpperCase());
-                      setDescription(acc.name);
-                    }}
-                  >
-                    {acc.name}
-                  </NeoButton>
-                ))}
-              {accounts.filter((acc) => acc.type === "CREDIT").length === 0 && (
-                <p className="col-span-2 text-[10px] text-muted-foreground text-center py-2 uppercase font-black">
-                  No hay cuentas de deuda creadas
-                </p>
-              )}
-            </div>
+        <div className="flex flex-col gap-4">
+          <div className="flex items-center px-4 border-l-2 border-primary/20">
+            <span className="text-[10px] font-black uppercase tracking-widest text-white/60">Origen de Fondos</span>
           </div>
-        )}
-
-        {/* Billing Range and Utility Splitter (for EPM / Credit Cards) */}
-        {(targetDebt ||
-          allCategories.find((c) => c.id === categoryId)?.name ===
-            "Pago Préstamo") && (
-          <div
-            className={cn(
-              "flex flex-col gap-4 p-4 rounded-[2rem] animate-in fade-in slide-in-from-top-4 duration-300 transition-all",
-              splitEpm
-                ? "bg-amber-500/10 border border-amber-500/20"
-                : "bg-white/5 border border-white/10",
-            )}
-          >
-            <div className="flex items-center justify-between">
-              <span
-                className={cn(
-                  "text-[10px] font-black uppercase tracking-widest",
-                  targetDebt === "EPM" ? "text-amber-500" : "text-primary",
-                )}
-              >
-                📅 Periodo de Facturación
-              </span>
-              {targetDebt === "EPM" && evStatsData.total > 0 && (
-                <span className="text-[9px] font-black px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-500 uppercase">
-                  EV: ${evStatsData.total.toLocaleString()}
-                </span>
-              )}
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <div className="flex flex-col gap-1.5">
-                <span className="text-[8px] font-black text-muted-foreground uppercase px-1">
-                  Inicio Ciclo
-                </span>
-                <input
-                  type="date"
-                  value={billingPeriodStart}
-                  onChange={(e) => setBillingPeriodStart(e.target.value)}
-                  max={formatToInputDate(new Date())}
-                  className="bg-black/20 border-none rounded-xl px-3 h-10 text-[10px] font-bold text-white outline-none focus:ring-1 ring-primary/30"
-                />
-              </div>
-              <div className="flex flex-col gap-1.5">
-                <span className="text-[8px] font-black text-muted-foreground uppercase px-1">
-                  Fin Ciclo
-                </span>
-                <input
-                  type="date"
-                  value={billingPeriodEnd}
-                  onChange={(e) => setBillingPeriodEnd(e.target.value)}
-                  max={formatToInputDate(new Date())}
-                  className="bg-black/20 border-none rounded-xl px-3 h-10 text-[10px] font-bold text-white outline-none focus:ring-1 ring-primary/30"
-                />
-              </div>
-            </div>
-
-            {targetDebt === "EPM" && (
-              <div className="flex flex-col gap-3 pt-2 border-t border-white/5">
-                <div className="flex items-center justify-between">
-                  <p className="text-[10px] text-muted-foreground font-black uppercase tracking-tight">
-                    {evStatsData.count > 0
-                      ? `Detectadas ${evStatsData.count} recargas`
-                      : "No se encontraron recargas en este rango"}
-                  </p>
-                  <NeoButton
-                    variant="secondary"
-                    className={cn(
-                      "h-8 px-3 text-[8px] font-black uppercase rounded-lg transition-all",
-                      splitEpm
-                        ? "bg-amber-500/20 text-amber-500 border-none"
-                        : "bg-blue-500/10 text-blue-400 border-none",
-                    )}
-                    onClick={() => setSplitEpm(!splitEpm)}
-                  >
-                    {splitEpm ? "Deseleccionar" : "Dividir EPM"}
-                  </NeoButton>
-                </div>
-
-                {evStatsData.transactions.length > 0 && (
-                  <div className="flex flex-col gap-1.5 max-h-[120px] overflow-y-auto pr-1 custom-scrollbar">
-                    {evStatsData.transactions.map((tx) => (
-                      <div
-                        key={tx.id}
-                        className="flex justify-between items-center p-2 rounded-xl bg-white/5 border border-white/5"
-                      >
-                        <div className="min-w-0">
-                          <p className="text-[9px] font-bold text-white truncate">
-                            {format(new Date(tx.date), "MMM d")} -{" "}
-                            {tx.description?.split("|")[0]}
-                          </p>
-                          <p className="text-[7px] text-muted-foreground uppercase font-black">
-                            {tx.description?.split("|").slice(1).join(" | ")}
-                          </p>
-                        </div>
-                        <span className="text-[9px] font-black text-amber-500 shrink-0">
-                          ${tx.amount.toLocaleString()}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        )}
-
-        <NeoCard className="p-3 flex flex-col gap-4">
-          <div className="flex flex-col gap-2">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center">
-                  <CalendarIcon className="w-4 h-4" />
-                </div>
-                <div>
-                  <span className="block text-[8px] text-muted-foreground uppercase font-black tracking-widest leading-none">
-                    Fecha
-                  </span>
-                  <span className="block font-bold text-xs">
-                    {format(date, "MMM d, yyyy")}
-                  </span>
-                </div>
-              </div>
-
-              <div className="flex gap-1.5">
-                <NeoButton
-                  size="sm"
-                  variant={
-                    format(date, "yyyy-MM-dd") ===
-                    format(new Date(), "yyyy-MM-dd")
-                      ? "primary"
-                      : "secondary"
-                  }
-                  onClick={() => handleQuickDate("today")}
-                  className="h-7 px-2 text-[9px] font-black uppercase rounded-lg"
-                >
-                  Hoy
-                </NeoButton>
-                <NeoButton
-                  size="sm"
-                  variant={
-                    format(date, "yyyy-MM-dd") ===
-                    format(new Date(Date.now() - 86400000), "yyyy-MM-dd")
-                      ? "primary"
-                      : "secondary"
-                  }
-                  onClick={() => handleQuickDate("yesterday")}
-                  className="h-7 px-2 text-[9px] font-black uppercase rounded-lg"
-                >
-                  Ayer
-                </NeoButton>
-              </div>
-            </div>
-
-            <div className="relative group">
-              <input
-                type="date"
-                max={formatToInputDate(new Date())}
-                value={formatToInputDate(date)}
-                onChange={(e) => setDate(parseInputDate(e.target.value))}
-                className="w-full bg-muted/10 border-white/5 h-10 rounded-lg px-3 outline-none text-xs font-bold appearance-none cursor-pointer focus:ring-1 ring-primary/30 transition-all"
-              />
-              <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none opacity-50">
-                <CalendarIcon className="w-3 h-3" />
-              </div>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-muted/20 text-muted-foreground flex items-center justify-center">
-              <span className="text-sm">✎</span>
-            </div>
-            <div className="flex-1 relative">
-              <input
-                type="text"
-                placeholder="Añadir nota..."
-                value={description}
-                maxLength={15}
-                onChange={(e) => setDescription(e.target.value)}
-                className="w-full bg-transparent border-none outline-none text-foreground text-sm font-medium placeholder:text-muted-foreground/30 pr-8"
-              />
-              <span className="absolute right-0 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">
-                {description.length}/15
-              </span>
-            </div>
-          </div>
-        </NeoCard>
-
-        <div className="pt-1">
-          <NeoButton
-            className={cn(
-              "w-full shadow-lg text-base font-bold tracking-widest transition-all h-12 rounded-2xl",
-              type === TransactionType.INCOME
-                ? "shadow-emerald-500/10 hover:shadow-emerald-500/20"
-                : "shadow-rose-500/10 hover:shadow-rose-500/20",
-            )}
-            size="lg"
-            variant={type === TransactionType.INCOME ? "primary" : "secondary"}
-            disabled={!categoryId || !amount || Number(amount) <= 0 || isSaving}
-            onClick={handleSave}
-            isLoading={isSaving}
-          >
-            {isSaving ? "GUARDANDO..." : "ACTUALIZAR TRANSACCIÓN"}
-          </NeoButton>
+          <SourceSelector
+            accounts={accounts}
+            selectedAccountId={accountId}
+            onAccountChange={setAccountId}
+          />
         </div>
+
+        {/* Footer Data Section */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+           <section className="flex flex-col gap-5 bg-white/[0.02] p-10 rounded-[3rem] border border-white/5 relative group hover:border-primary/20 transition-all">
+             <span className="text-[10px] font-black uppercase tracking-widest text-white/50 ml-2">Fecha Registrada</span>
+             <div className="flex flex-col xl:flex-row items-center gap-8 w-full">
+               <div 
+                 className="relative flex items-center gap-5 bg-primary/10 px-8 py-5 rounded-[2rem] border border-primary/20 cursor-pointer overflow-hidden shadow-2xl w-full"
+                 onClick={() => dateInputRef.current?.showPicker()}
+               >
+                 <CalendarIcon className="w-6 h-6 text-primary" />
+                 <span className="text-sm font-black uppercase tracking-[0.2em] text-white underline decoration-primary/30 decoration-2 underline-offset-8">
+                   {format(date, "EEEE, dd MMMM")}
+                 </span>
+                 <input 
+                   ref={dateInputRef}
+                   type="date" max={todayStr} value={formatToInputDate(date)} 
+                   onChange={e => setDate(parseInputDate(e.target.value))}
+                   className="absolute inset-0 opacity-0 cursor-pointer z-10"
+                 />
+               </div>
+               <div className="flex gap-4 w-full xl:w-auto">
+                 {["Hoy", "Ayer"].map((l, i) => {
+                   const d2 = i === 0 ? new Date() : new Date(new Date().setDate(new Date().getDate() - 1));
+                   const active = formatToInputDate(date) === formatToInputDate(d2);
+                   return (
+                     <button key={l} onClick={() => setDate(d2)} className={cn(
+                       "flex-1 xl:px-10 h-14 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] transition-all", 
+                       active ? "bg-primary text-black shadow-[0_0_30px_rgba(var(--primary-rgb),0.5)]" : "bg-white/10 text-white/50 border border-white/10 hover:bg-white/20"
+                     )}>{l}</button>
+                   )
+                 })}
+               </div>
+             </div>
+           </section>
+
+           <section className="flex flex-col gap-5 bg-white/[0.05] p-10 rounded-[3rem] border border-white/10 relative group hover:border-primary/40 transition-all">
+             <div className="flex items-center justify-between mx-2">
+               <span className="text-[10px] font-black uppercase tracking-widest text-white/50">Comentario del Usuario</span>
+               <span className="text-[10px] font-black text-rose-500/80 uppercase tracking-widest">{description.length}/20</span>
+             </div>
+             <div className="relative">
+               <input
+                 type="text"
+                 placeholder="Añadir nota técnica o personal..."
+                 value={description}
+                 maxLength={20}
+                 onChange={(e) => setDescription(e.target.value)}
+                 className="w-full bg-black/40 border border-white/5 rounded-[2rem] px-8 h-20 text-sm font-black outline-none focus:border-primary/40 transition-all text-white shadow-inner placeholder:text-white/20"
+               />
+             </div>
+           </section>
+        </div>
+
+        <motion.div 
+          className="pt-8 flex justify-center pb-10"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5 }}
+        >
+          <NeoButton
+            className="w-full max-w-4xl h-24 rounded-[4rem] bg-emerald-500 hover:bg-emerald-400 text-black text-lg font-black uppercase tracking-[0.8em] shadow-[0_20px_50px_rgba(16,185,129,0.3)] active:scale-[0.98] transition-all duration-300 group relative overflow-hidden"
+            onClick={handleSave}
+            disabled={isSaving}
+          >
+            <motion.div 
+              className="absolute inset-0 bg-white/20 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000 skew-x-12"
+            />
+            {isSaving ? (
+              <span className="flex items-center gap-3">
+                <motion.span 
+                  animate={{ rotate: 360 }}
+                  transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
+                  className="w-5 h-5 border-2 border-black border-t-transparent rounded-full"
+                />
+                ACTUALIZANDO...
+              </span>
+            ) : "GUARDAR CAMBIOS"}
+          </NeoButton>
+        </motion.div>
       </div>
     </div>
   );

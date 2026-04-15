@@ -12,7 +12,7 @@
 
 - 🔋 **Optimizado para EV**: Módulos especializados para registrar sesiones de carga (kWh, SOC, Odómetro).
 - ⚡ **Infraestructura con Neon**: Potenciado por Neon Postgres para branching instantáneo y escalabilidad serverless.
-- 🔐 **Autenticación Segura**: Integración fluida con Google OAuth y Seguridad a Nivel de Fila (RLS).
+- 🔐 **Autenticación Segura**: Integración fluida con Google OAuth y Seguridad a Nivel de Fila (RLS). CAPTCHA (Turnstile) opcional y autoconfigurable.
 - 🧹 **Autogestionado**: Limpieza automática (Garbage Collection) que mantiene un límite de 50 usuarios para hosting demo de costo cero.
 - 🇨🇴 **Enfoque Local**: Diseñado para el mercado colombiano (Moneda COP, tipos de carga locales, branding nacional).
 - 📱 **Mobile Ready**: Diseño listo para PWA, ideal para registrar gastos directamente en la estación de carga.
@@ -58,12 +58,21 @@
    GOOGLE_CLIENT_ID="tu-google-id"
    GOOGLE_CLIENT_SECRET="tu-google-secret"
    NEXT_PUBLIC_ALLOW_DEV_BYPASS="true"
+   
+   # Seguridad (Cloudflare Turnstile - Opcional)
+   NEXT_PUBLIC_TURNSTILE_SITE_KEY="tu-site-key"
+   NEXT_PUBLIC_ENABLE_TURNSTILE="false" 
    ```
+   
+   > [!NOTE]
+   > **Comportamiento del CAPTCHA:** El sistema detecta automáticamente si has configurado `NEXT_PUBLIC_TURNSTILE_SITE_KEY`. Si la variable tiene valor, el CAPTCHA se activará por defecto para proteger el login. Si no existe o está vacía, el sistema lo desactivará automáticamente para facilitar el desarrollo local.
+   
 
 4. **Inicializa la Base de Datos:**
-   ```bash
-   npx prisma db push
-   ```
+    ```bash
+    npx prisma db push
+    npx prisma db seed
+    ```
 
 5. **Lanza el servidor de desarrollo:**
    ```bash
@@ -135,6 +144,7 @@ Este demo está configurado para un **lanzamiento público de bajo mantenimiento
 3. **Database Initialization:**
    ```bash
    npx prisma db push
+   npx prisma db seed
    ```
 
 4. **Run development server:**

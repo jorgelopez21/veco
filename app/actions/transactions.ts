@@ -183,7 +183,17 @@ export async function createTransaction(data: CreateTransactionInput) {
 
     return {
       success: true,
-      transaction: { ...result, amount: Number(result.amount) },
+      transaction: { 
+        id: result.id,
+        amount: Number(result.amount),
+        description: result.description,
+        date: result.date.toISOString(),
+        type: result.type,
+        categoryId: result.categoryId,
+        accountId: result.accountId,
+        vehicleId: result.vehicleId,
+        kwhGrid: result.kwhGrid ? Number(result.kwhGrid) : null,
+      },
     };
   } catch (err) {
     console.error("Failed to create transaction:", err);
@@ -202,7 +212,7 @@ const getCachedCategories = (userId: string) =>
     ["categories-list", userId],
     {
       tags: [`categories-${userId}`],
-      revalidate: 3600,
+      revalidate: 60,
     }
   )();
 
@@ -223,7 +233,7 @@ const getCachedBankAccounts = (userId: string) =>
     ["bank-accounts-list", userId],
     {
       tags: [`accounts-${userId}`],
-      revalidate: 3600,
+      revalidate: 60,
     }
   )();
 
@@ -258,14 +268,32 @@ export async function getTransaction(id: string) {
   if (!transaction) return null;
 
   return {
-    ...transaction,
+    id: transaction.id,
     amount: Number(transaction.amount),
-    kwhGrid: transaction.kwhGrid ? Number(transaction.kwhGrid) : null,
+    description: transaction.description,
     date: transaction.date.toISOString(),
+    type: transaction.type,
+    categoryId: transaction.categoryId,
+    accountId: transaction.accountId,
+    vehicleId: transaction.vehicleId,
+    userId: transaction.userId,
+    odo: transaction.odo,
+    socIni: transaction.socIni,
+    socFin: transaction.socFin,
+    kwhGrid: transaction.kwhGrid ? Number(transaction.kwhGrid) : null,
+    evOrigin: transaction.evOrigin,
     createdAt: transaction.createdAt.toISOString(),
     updatedAt: transaction.updatedAt.toISOString(),
+    category: transaction.category ? {
+      id: transaction.category.id,
+      name: transaction.category.name,
+      icon: transaction.category.icon,
+      color: transaction.category.color,
+      type: transaction.category.type,
+    } : null,
   };
 }
+
 
 export async function updateTransaction(
   id: string,
@@ -396,7 +424,17 @@ export async function updateTransaction(
 
     return {
       success: true,
-      transaction: { ...result, amount: Number(result.amount) },
+      transaction: { 
+        id: result.id,
+        amount: Number(result.amount),
+        description: result.description,
+        date: result.date.toISOString(),
+        type: result.type,
+        categoryId: result.categoryId,
+        accountId: result.accountId,
+        vehicleId: result.vehicleId,
+        kwhGrid: result.kwhGrid ? Number(result.kwhGrid) : null,
+      },
     };
   } catch (err) {
     console.error("Update error:", err);
@@ -570,6 +608,10 @@ export async function getTransactions() {
     ...t,
     amount: Number(t.amount),
     kwhGrid: t.kwhGrid ? Number(t.kwhGrid) : null,
+    account: t.account ? {
+      ...t.account,
+      balance: Number(t.account.balance)
+    } : null
   }));
 }
 

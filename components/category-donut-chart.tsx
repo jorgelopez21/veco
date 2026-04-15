@@ -126,7 +126,7 @@ export function CategoryDonutChart({
 
         {/* Total on the Right */}
         <div className="flex flex-col items-center justify-center pr-4">
-          <span className="text-[9px] text-muted-foreground uppercase font-black tracking-widest leading-none mb-1 opacity-60">
+          <span className="text-[9px] text-muted-foreground uppercase font-black tracking-widest leading-none mb-1 opacity-90">
             {type === "EXPENSE" ? "Total Gastos" : "Total Ingresos"}
           </span>
           <span className="text-2xl font-black bg-gradient-to-br from-white to-white/60 bg-clip-text text-transparent tracking-tighter">
@@ -147,7 +147,7 @@ export function CategoryDonutChart({
               className="flex w-full justify-between items-center"
             >
               <div className="flex flex-col flex-1 truncate">
-                <span className="text-muted-foreground/50 text-[8px] font-black uppercase tracking-widest leading-none mb-1">
+                <span className="text-muted-foreground/80 text-[8px] font-black uppercase tracking-widest leading-none mb-1">
                   Categoría
                 </span>
                 <span className="text-foreground font-black uppercase text-sm italic tracking-tighter truncate">
@@ -156,7 +156,7 @@ export function CategoryDonutChart({
               </div>
 
               <div className="flex flex-col items-end pl-4 shrink-0">
-                <span className="text-muted-foreground/50 text-[8px] font-black uppercase tracking-widest leading-none mb-1">
+                <span className="text-muted-foreground/80 text-[8px] font-black uppercase tracking-widest leading-none mb-1">
                   {type === "EXPENSE" ? "Valor / % Gasto" : "Valor / % Ingreso"}
                 </span>
                 <div className="flex items-center gap-2">
@@ -185,7 +185,7 @@ export function CategoryDonutChart({
               exit={{ opacity: 0 }}
               className="w-full text-center"
             >
-              <span className="text-muted-foreground/30 italic text-[10px] uppercase font-black tracking-widest">
+              <span className="text-muted-foreground/70 italic text-[10px] uppercase font-black tracking-widest">
                 Toca una categoría para detalles
               </span>
             </motion.div>

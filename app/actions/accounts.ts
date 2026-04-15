@@ -27,6 +27,9 @@ export async function createBankAccount(data: { name: string; type: string; bala
   const { name, type, balance, currency, color } = validated.data;
 
   try {
+    const count = await prisma.bankAccount.count({ where: { userId: session.user.id } });
+    if (count >= 10) return { error: "Límite alcanzado: máximo 10 cuentas" };
+
     const account = await prisma.bankAccount.create({
       data: {
         name,

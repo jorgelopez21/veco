@@ -179,7 +179,7 @@ export function TransactionItem({ transaction }: TransactionItemProps) {
                 {transaction.vehicle && (
                   <>
                     <span className="w-1 h-1 rounded-full bg-primary/40" />
-                    <p className="text-[10px] text-primary/80 uppercase font-black tracking-widest leading-none">
+                    <p className="text-[10px] text-primary uppercase font-black tracking-widest leading-none">
                       {transaction.vehicle.brand} {transaction.vehicle.model}
                     </p>
                   </>

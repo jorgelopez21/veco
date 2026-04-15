@@ -27,6 +27,7 @@ export default async function EditTransactionPage({
       recentIds={data.recentIds}
       recentAccountIds={data.recentAccountIds}
       accounts={data.accounts}
+      vehicles={data.vehicles}
       evStats={data.evStats}
     />
   );

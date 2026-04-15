@@ -158,7 +158,7 @@ export default function AccountsPage() {
       />
 
       <div className="fixed top-6 left-6 z-50">
-        <Link href="/finance/transactions/new">
+        <Link href="/finance/profile">
           <NeoButton
             variant="secondary"
             className="gap-1.5 h-9 px-3 rounded-xl shadow-xl hover:scale-[1.05] active:scale-95 transition-all text-[10px] font-black uppercase tracking-widest border-white/10 bg-black/20 backdrop-blur-md"
@@ -218,6 +218,7 @@ export default function AccountsPage() {
                   value={form.name}
                   onChange={(e) => setForm({ ...form, name: e.target.value })}
                   placeholder="Nombre de la cuenta"
+                  maxLength={20}
                 />
               </div>
 
@@ -252,20 +253,25 @@ export default function AccountsPage() {
                     </span>
                     <input
                       type="text"
-                      inputMode="numeric"
+                      inputMode="decimal"
                       className="w-full bg-white/10 border border-white/20 rounded-xl pl-8 pr-4 h-12 text-sm font-bold outline-none text-white placeholder:text-white/20 focus:border-primary/50 transition-colors"
-                      value={
-                        form.balance
-                          ? Number(form.balance).toLocaleString("es-US", {
-                              maximumFractionDigits: 0,
-                            })
-                          : ""
-                      }
+                      value={form.balance}
                       onChange={(e) => {
-                        const val = e.target.value.replace(/[^0-9]/g, "");
-                        if (val.length <= 8) setForm({ ...form, balance: val });
+                        let val = e.target.value.replace(/[^0-9.]/g, "");
+                        const parts = val.split(".");
+                        if (parts.length > 2) {
+                          val = parts[0] + "." + parts.slice(1).join("");
+                        }
+                        const newParts = val.split(".");
+                        if (newParts[0].length > 7) {
+                          newParts[0] = newParts[0].substring(0, 7);
+                        }
+                        if (newParts[1] && newParts[1].length > 2) {
+                          newParts[1] = newParts[1].substring(0, 2);
+                        }
+                        setForm({ ...form, balance: newParts.join(".") });
                       }}
-                      placeholder="0"
+                      placeholder="0.00"
                     />
                   </div>
                 </div>
@@ -277,14 +283,14 @@ export default function AccountsPage() {
                 </label>
                 <div className="flex flex-wrap gap-2 pt-1 px-1">
                   {[
-                    "#3b82f6",
-                    "#ef4444",
-                    "#10b981",
-                    "#f59e0b",
-                    "#a855f7",
-                    "#ec4899",
-                    "#84cc16",
-                    "#64748b",
+                    "#10b981", // Emerald (Base)
+                    "#00f2ff", // Neo Cyan
+                    "#ff0055", // Rose Neo
+                    "#a855f7", // Electric Purple
+                    "#ffff00", // Bright Yellow
+                    "#ff8800", // Vivid Orange
+                    "#00ff00", // Pure Lime
+                    "#ffffff", // Contrast White
                   ].map((c) => (
                     <button
                       key={c}

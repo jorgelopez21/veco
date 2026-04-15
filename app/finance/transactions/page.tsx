@@ -35,8 +35,7 @@ export default async function TransactionsPage({
   // Get vehicles first to know the default
   const vehiclesRaw = await getVehicles(userId);
   const vehicles = vehiclesRaw.map(v => ({ id: v.id, brand: v.brand, model: v.model }));
-  const defaultVehicleId = vehicles[0]?.id || "ALL";
-  const vehicleIdParam = sp.vehicleId || defaultVehicleId;
+  const vehicleIdParam = sp.vehicleId || "ALL";
 
   let startDate: Date | undefined;
   let endDate: Date | undefined;
@@ -116,10 +115,18 @@ export default async function TransactionsPage({
       <ExportTransactions transactions={transactions} />
 
       <div className="flex flex-col gap-3">
-        <div className="flex items-center gap-2 px-1">
-          <h2 className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">
-            Historial
-          </h2>
+        <div className="flex flex-col gap-1 px-1">
+          <div className="flex items-center gap-2">
+            <h2 className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">
+              Historial
+            </h2>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-[8px] font-black uppercase tracking-widest text-muted-foreground/30">Desliza:</span>
+            <span className="text-[8px] font-black uppercase tracking-widest text-emerald-500/50">Derecha - Editar</span>
+            <span className="w-1 h-1 rounded-full bg-white/5" />
+            <span className="text-[8px] font-black uppercase tracking-widest text-rose-500/50">Izquierda - Borrar</span>
+          </div>
         </div>
         {transactions.length === 0 ? (
           <NeoCard className="p-12 text-center text-muted-foreground bg-white/5 border-dashed border-white/10 rounded-3xl">

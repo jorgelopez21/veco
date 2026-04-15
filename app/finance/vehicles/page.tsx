@@ -11,6 +11,7 @@ import {
   Car,
   Battery,
   X,
+  ChevronDown,
 } from "lucide-react";
 import { motion, useMotionValue, useTransform, PanInfo } from "framer-motion";
 import Link from "next/link";
@@ -207,6 +208,7 @@ export default function VehiclesPage() {
                   value={form.brand}
                   onChange={(e) => setForm({ ...form, brand: e.target.value })}
                   placeholder="Marca"
+                  maxLength={15}
                 />
               </div>
 
@@ -219,6 +221,7 @@ export default function VehiclesPage() {
                   value={form.model}
                   onChange={(e) => setForm({ ...form, model: e.target.value })}
                   placeholder="Modelo"
+                  maxLength={15}
                 />
               </div>
 
@@ -231,11 +234,20 @@ export default function VehiclesPage() {
                     kWh
                   </span>
                   <input
-                    type="number"
-                    step="0.1"
+                    type="text"
+                    inputMode="decimal"
                     className="w-full bg-white/10 border border-white/20 rounded-xl px-4 h-12 text-sm font-bold outline-none text-white placeholder:text-white/20 focus:border-primary/50 transition-colors"
                     value={form.batteryCapacity}
-                    onChange={(e) => setForm({ ...form, batteryCapacity: e.target.value })}
+                    onChange={(e) => {
+                      let val = e.target.value.replace(/,/g, ".").replace(/[^0-9.]/g, "");
+                      const match = val.match(/^(\d{0,3})(?:\.(\d{0,2}))?/);
+                      if (match) {
+                        val = match[1] + (val.includes('.') ? '.' + (match[2] || '') : '');
+                      } else {
+                        val = "";
+                      }
+                      setForm({ ...form, batteryCapacity: val });
+                    }}
                     placeholder="56.12"
                   />
                 </div>
@@ -245,20 +257,22 @@ export default function VehiclesPage() {
                 <label className="text-[8px] uppercase font-black text-muted-foreground tracking-widest pl-1">
                   Degradación (%)
                 </label>
-                <div className="relative">
-                  <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm font-bold text-white/30">
+                <div className="relative group">
+                  <span className="absolute right-9 top-1/2 -translate-y-1/2 text-sm font-bold text-white/30 pointer-events-none">
                     %
                   </span>
-                  <input
-                    type="number"
-                    step="0.1"
-                    min="0"
-                    max="15"
-                    className="w-full bg-white/10 border border-white/20 rounded-xl px-4 h-12 text-sm font-bold outline-none text-white placeholder:text-white/20 focus:border-primary/50 transition-colors"
-                    value={form.degradation}
+                  <select
+                    className="w-full bg-white/10 border border-white/20 rounded-xl px-4 h-12 text-sm font-bold outline-none text-white focus:border-primary/50 transition-colors appearance-none"
+                    value={form.degradation ? String(Math.min(20, Math.floor(Number(form.degradation)))) : "0"}
                     onChange={(e) => setForm({ ...form, degradation: e.target.value })}
-                    placeholder="0.0"
-                  />
+                  >
+                    {[...Array(21)].map((_, i) => (
+                      <option key={i} value={String(i)} className="bg-zinc-900">
+                        {i}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40 pointer-events-none" />
                 </div>
               </div>
 
