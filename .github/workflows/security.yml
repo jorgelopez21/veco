@@ -2,6 +2,9 @@ name: Security Scan
 
 on:
   workflow_call:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 0 * * 1' # Cada Lunes a las 00:00 UTC
 
 permissions:
   contents: read
