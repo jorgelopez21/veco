@@ -18,11 +18,11 @@ export async function deleteAccount() {
   }
 
   // Purge all caches BEFORE deletion so stale data isn't served on next login
-  revalidateTag(`categories-${userId}`);
-  revalidateTag(`accounts-${userId}`);
-  revalidateTag(`transactions-${userId}`);
-  revalidateTag(`vehicles-${userId}`);
-  revalidateTag(`dashboard-${userId}`);
+  revalidateTag(`categories-${userId}`, "max");
+  revalidateTag(`accounts-${userId}`, "max");
+  revalidateTag(`transactions-${userId}`, "max");
+  revalidateTag(`vehicles-${userId}`, "max");
+  revalidateTag(`dashboard-${userId}`, "max");
   revalidatePath("/finance");
 
   try {

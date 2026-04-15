@@ -39,6 +39,7 @@ interface TransactionFormProps {
   accounts: BankAccountOption[];
   vehicles: Vehicle[];
   lastOdo?: number;
+  evStats?: any;
 }
 
 export function TransactionForm({

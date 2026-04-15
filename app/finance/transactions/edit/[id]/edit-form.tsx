@@ -42,6 +42,7 @@ interface EditTransactionFormProps {
   recentAccountIds: string[];
   accounts: BankAccountOption[];
   vehicles: { id: string; brand: string; model: string; batteryCapacity: number; degradation: number }[];
+  evStats?: any;
 }
 
 export function EditTransactionForm({
