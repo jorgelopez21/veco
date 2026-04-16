@@ -7,8 +7,9 @@ import { NeoCard } from "@/components/ui/neo-card";
 import { AlertCircle } from "lucide-react";
 import Image from "next/image";
 
-import { Suspense, useState } from "react";
+import { Suspense, useState, useTransition } from "react";
 import { Turnstile } from "@marsidev/react-turnstile";
+import { validateTurnstileAction } from "@/app/actions/auth";
 
 const IS_DEV = process.env.NODE_ENV === "development";
 
@@ -16,9 +17,30 @@ function LoginContent() {
   const searchParams = useSearchParams();
   const error = searchParams.get("error");
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const [isPending, startTransition] = useTransition();
+  const [serverError, setServerError] = useState<string | null>(null);
 
   const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || "";
   const isTurnstileEnabled = process.env.NEXT_PUBLIC_ENABLE_TURNSTILE !== "false" && !!siteKey;
+
+  const handleLogin = async () => {
+    if (isTurnstileEnabled && !turnstileToken) return;
+
+    setServerError(null);
+
+    startTransition(async () => {
+      if (isTurnstileEnabled) {
+        const result = await validateTurnstileAction(turnstileToken);
+        if (!result.success) {
+          setServerError(result.error || "Error de seguridad");
+          return;
+        }
+      }
+      
+      // Si pasa la validación del servidor (o si está deshabilitado), procedemos
+      await signIn("google", { callbackUrl: "/" });
+    });
+  };
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-gradient-to-b from-background to-black">
@@ -137,9 +159,18 @@ function LoginContent() {
                     </div>
                   )}
 
+                  {serverError && (
+                    <div className="p-3 bg-rose-500/10 border border-rose-500/20 rounded-2xl flex items-center gap-3 animate-in shake duration-300">
+                      <AlertCircle className="w-4 h-4 text-rose-500 shrink-0" />
+                      <p className="text-[9px] font-black text-rose-500 uppercase tracking-tight">
+                        {serverError}
+                      </p>
+                    </div>
+                  )}
+
                   <NeoButton
-                    onClick={() => signIn("google", { callbackUrl: "/" })}
-                    disabled={isTurnstileEnabled && !turnstileToken}
+                    onClick={handleLogin}
+                    disabled={(isTurnstileEnabled && !turnstileToken) || isPending}
                     className="w-full h-12 bg-transparent border border-white/10 text-white hover:bg-white/5 shadow-none text-[10px] font-bold uppercase tracking-widest flex items-center justify-center gap-3 transition-all disabled:opacity-50"
                   >
                     <svg
