@@ -42,7 +42,7 @@ export async function createBankAccount(data: { name: string; type: string; bala
     });
 
     console.log(`[createBankAccount] Success: ${account.id}`);
-    revalidateTag(`accounts-${session.user.id}`, "max");
+    revalidateTag(`accounts-${session.user.id}`);
     revalidatePath("/finance/accounts");
     revalidatePath("/finance/transactions/new");
     return {
@@ -75,7 +75,7 @@ export async function updateBankAccount(id: string, data: Partial<{ name: string
       data: validated.data,
     });
 
-    revalidateTag(`accounts-${session.user.id}`, "max");
+    revalidateTag(`accounts-${session.user.id}`);
     revalidatePath("/finance/accounts");
     return {
       success: true,
@@ -101,7 +101,7 @@ export async function deleteBankAccount(id: string) {
       where: { id, userId: session.user.id },
     });
 
-    revalidateTag(`accounts-${session.user.id}`, "max");
+    revalidateTag(`accounts-${session.user.id}`);
     revalidatePath("/finance/accounts");
     return { success: true };
   } catch {

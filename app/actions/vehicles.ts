@@ -58,7 +58,7 @@ export async function createVehicle(data: {
       },
     });
 
-    revalidateTag(`vehicles-${userId}`, "max");
+    revalidateTag(`vehicles-${userId}`);
     revalidatePath("/finance/vehicles");
     revalidatePath("/finance/transactions/new");
     return { 
@@ -97,7 +97,7 @@ export async function updateVehicle(id: string, data: {
       },
     });
 
-    revalidateTag(`vehicles-${userId}`, "max");
+    revalidateTag(`vehicles-${userId}`);
     revalidatePath("/finance/vehicles");
     return { 
       success: true, 
@@ -123,7 +123,7 @@ export async function deleteVehicle(id: string) {
       where: { id, userId },
     });
 
-    revalidateTag(`vehicles-${userId}`, "max");
+    revalidateTag(`vehicles-${userId}`);
     revalidatePath("/finance/vehicles");
     return { success: true };
   } catch {
