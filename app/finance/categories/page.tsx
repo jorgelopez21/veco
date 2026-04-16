@@ -276,9 +276,17 @@ export default function CategoriesPage() {
         )}
 
         <div className="flex flex-col gap-4">
-          <h2 className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] pl-1">
-            Tus Categorías
-          </h2>
+          <div className="flex flex-col gap-1">
+            <h2 className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] pl-1">
+              Tus Categorías
+            </h2>
+            <div className="flex items-center gap-2 pl-1 mb-2">
+              <span className="text-[8px] font-black uppercase tracking-widest text-white/50">Desliza:</span>
+              <span className="text-[8px] font-black uppercase tracking-widest text-emerald-400">Derecha - Editar</span>
+              <span className="w-1 h-1 rounded-full bg-white/20" />
+              <span className="text-[8px] font-black uppercase tracking-widest text-rose-400">Izquierda - Borrar</span>
+            </div>
+          </div>
           <div className="flex flex-col gap-2">
             {loading && categories.length === 0 ? (
               <p className="text-center py-10 opacity-50 italic text-[10px] uppercase font-black tracking-widest animate-pulse">

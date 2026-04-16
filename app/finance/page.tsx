@@ -122,10 +122,10 @@ export default async function Home({
             </Link>
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-[8px] font-black uppercase tracking-widest text-muted-foreground/30">Desliza:</span>
-            <span className="text-[8px] font-black uppercase tracking-widest text-emerald-500/50">Derecha - Editar</span>
-            <span className="w-1 h-1 rounded-full bg-white/5" />
-            <span className="text-[8px] font-black uppercase tracking-widest text-rose-500/50">Izquierda - Borrar</span>
+            <span className="text-[8px] font-black uppercase tracking-widest text-white/50">Desliza:</span>
+            <span className="text-[8px] font-black uppercase tracking-widest text-emerald-400">Derecha - Editar</span>
+            <span className="w-1 h-1 rounded-full bg-white/20" />
+            <span className="text-[8px] font-black uppercase tracking-widest text-rose-400">Izquierda - Borrar</span>
           </div>
         </div>
 

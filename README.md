@@ -59,9 +59,10 @@
    GOOGLE_CLIENT_SECRET="tu-google-secret"
    NEXT_PUBLIC_ALLOW_DEV_BYPASS="true"
    
-   # Seguridad (Cloudflare Turnstile - Opcional)
+   # Seguridad (Cloudflare Turnstile)
    NEXT_PUBLIC_TURNSTILE_SITE_KEY="tu-site-key"
-   NEXT_PUBLIC_ENABLE_TURNSTILE="false" 
+   TURNSTILE_SECRET_KEY="tu-secret-key"
+   NEXT_PUBLIC_ENABLE_TURNSTILE="true"
    ```
    
    > [!NOTE]

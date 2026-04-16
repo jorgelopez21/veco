@@ -171,9 +171,17 @@ export default function AccountsPage() {
 
       <div className="p-6 pt-20 flex flex-col gap-6">
         <header className="flex justify-between items-center">
-          <h1 className="text-2xl font-black italic tracking-tighter uppercase">
-            Cuentas
-          </h1>
+          <div className="flex flex-col gap-1">
+            <h1 className="text-2xl font-black italic tracking-tighter uppercase">
+              Cuentas
+            </h1>
+            <div className="flex items-center gap-2 pl-1">
+              <span className="text-[8px] font-black uppercase tracking-widest text-white/50">Desliza:</span>
+              <span className="text-[8px] font-black uppercase tracking-widest text-emerald-400">Derecha - Editar</span>
+              <span className="w-1 h-1 rounded-full bg-white/20" />
+              <span className="text-[8px] font-black uppercase tracking-widest text-rose-400">Izquierda - Borrar</span>
+            </div>
+          </div>
           {!isAdding && (
             <NeoButton
               size="icon"
