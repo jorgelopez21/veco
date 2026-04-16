@@ -79,8 +79,8 @@ export async function deleteTransaction(id: string) {
     revalidatePath("/finance/transactions");
     revalidatePath("/finance/accounts");
     revalidatePath("/finance/ev-stats");
-    revalidateTag(`transactions-${userId}`);
-    revalidateTag(`accounts-${userId}`);
+    revalidateTag(`transactions-${userId}`, "max");
+    revalidateTag(`accounts-${userId}`, "max");
     
     return { success: true };
   } catch (error) {

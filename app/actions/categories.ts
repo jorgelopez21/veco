@@ -27,7 +27,7 @@ export async function createCategory(data: {
     revalidatePath("/finance");
     revalidatePath("/finance/transactions/new");
     revalidatePath("/finance/categories");
-    revalidateTag(`categories-${userId}`);
+    revalidateTag(`categories-${userId}`, "max");
     return { success: true, category };
   } catch (error) {
     console.error(error);
@@ -55,7 +55,7 @@ export async function updateCategory(
     revalidatePath("/finance");
     revalidatePath("/finance/transactions/new");
     revalidatePath("/finance/categories");
-    revalidateTag(`categories-${userId}`);
+    revalidateTag(`categories-${userId}`, "max");
     return { success: true, category };
   } catch (error) {
     console.error(error);
@@ -75,7 +75,7 @@ export async function deleteCategory(id: string) {
     revalidatePath("/finance");
     revalidatePath("/finance/transactions/new");
     revalidatePath("/finance/categories");
-    revalidateTag(`categories-${userId}`);
+    revalidateTag(`categories-${userId}`, "max");
     return { success: true };
   } catch (error) {
     console.error(error);
