@@ -179,7 +179,9 @@ export async function createTransaction(data: CreateTransactionInput) {
     revalidatePath("/finance");
     revalidatePath("/finance/transactions");
     revalidatePath("/finance/accounts");
+    revalidatePath("/finance/ev-stats");
     revalidateTag(`transactions-${userId}`, "max");
+    revalidateTag(`accounts-${userId}`, "max");
 
     return {
       success: true,
@@ -420,7 +422,9 @@ export async function updateTransaction(
     revalidatePath("/finance");
     revalidatePath("/finance/transactions");
     revalidatePath("/finance/accounts");
+    revalidatePath("/finance/ev-stats");
     revalidateTag(`transactions-${userId}`, "max");
+    revalidateTag(`accounts-${userId}`, "max");
 
     return {
       success: true,
@@ -594,75 +598,3 @@ export async function getTransactionFormData(id?: string, providedUserId?: strin
   };
 }
 
-export async function getTransactions() {
-  const userId = await getUserId();
-  if (!userId) return [];
-
-  const transactions = await prisma.transaction.findMany({
-    where: { userId },
-    include: { category: true, account: true },
-    orderBy: { date: "desc" },
-  });
-
-  return transactions.map((t) => ({
-    ...t,
-    amount: Number(t.amount),
-    kwhGrid: t.kwhGrid ? Number(t.kwhGrid) : null,
-    account: t.account ? {
-      ...t.account,
-      balance: Number(t.account.balance)
-    } : null
-  }));
-}
-
-export async function deleteTransaction(id: string) {
-  const userId = await getUserId();
-  if (!userId) return { error: "Unauthorized" };
-
-  try {
-    const tx = await prisma.transaction.findUnique({
-      where: { id, userId },
-    });
-
-    if (!tx) return { error: "Transaction not found" };
-
-    await prisma.$transaction(async (prismaTx) => {
-      // Revert balance impact
-      if (tx.accountId) {
-        const account = await prismaTx.bankAccount.findUnique({
-          where: { id: tx.accountId },
-        });
-
-        if (account) {
-          const isCreditOrEnergy = account.type === "CREDIT" || account.type === "ENERGY";
-          const amount = Number(tx.amount);
-          let reversal = amount;
-
-          if (tx.type === "EXPENSE") {
-            reversal = isCreditOrEnergy ? -amount : amount;
-          } else {
-            reversal = isCreditOrEnergy ? amount : -amount;
-          }
-
-          await prismaTx.bankAccount.update({
-            where: { id: tx.accountId },
-            data: { balance: { increment: reversal } },
-          });
-        }
-      }
-
-      await prismaTx.transaction.delete({
-        where: { id, userId },
-      });
-    });
-
-    revalidatePath("/finance");
-    revalidatePath("/finance/transactions");
-    revalidatePath("/finance/accounts");
-    revalidateTag(`transactions-${userId}`, "max");
-    return { success: true };
-  } catch (error) {
-    console.error("Delete error:", error);
-    return { error: "Failed to delete transaction" };
-  }
-}

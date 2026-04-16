@@ -1,7 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { getUserId } from "@/lib/auth-utils";
 
 export async function deleteTransaction(id: string) {
@@ -24,16 +24,16 @@ export async function deleteTransaction(id: string) {
           where: { id: transaction.accountId },
         });
         if (account) {
-          const isCredit = account.type === "CREDIT";
+          const isCreditOrEnergy = account.type === "CREDIT" || account.type === "ENERGY";
           const amount = Number(transaction.amount);
           let balanceReversal = amount;
 
           if (transaction.type === "EXPENSE") {
-            // To revert an expense: decrease debt in credit, increase balance in liquid
-            balanceReversal = isCredit ? -amount : amount;
+            // To revert an expense: decrease debt in credit/energy, increase balance in liquid
+            balanceReversal = isCreditOrEnergy ? -amount : amount;
           } else {
-            // To revert an income: increase debt in credit, decrease balance in liquid
-            balanceReversal = isCredit ? amount : -amount;
+            // To revert an income: increase debt in credit/energy, decrease balance in liquid
+            balanceReversal = isCreditOrEnergy ? amount : -amount;
           }
 
           await tx.bankAccount.update({
@@ -78,6 +78,10 @@ export async function deleteTransaction(id: string) {
     revalidatePath("/finance");
     revalidatePath("/finance/transactions");
     revalidatePath("/finance/accounts");
+    revalidatePath("/finance/ev-stats");
+    revalidateTag(`transactions-${userId}`, "max");
+    revalidateTag(`accounts-${userId}`, "max");
+    
     return { success: true };
   } catch (error) {
     console.error("Delete error:", error);
