@@ -1,0 +1,23 @@
+name: Check Comfama Registrations
+
+on:
+  schedule:
+    # Se ejecuta cada 6 horas
+    - cron: '0 */6 * * *'
+  workflow_dispatch: # Permite ejecutar el flujo manualmente desde GitHub Actions
+
+permissions:
+  contents: read
+
+jobs:
+  check-status:
+    name: Check Registration Status
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run check script
+        run: |
+          chmod +x ./scripts/check-comfama.sh
+          ./scripts/check-comfama.sh
