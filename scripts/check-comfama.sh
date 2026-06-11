@@ -16,8 +16,8 @@ if [ -z "$content" ]; then
   exit 0 # Evitamos falsos positivos si Google Translate falla temporalmente
 fi
 
-# Buscamos la frase clave indicativa de que siguen cerradas
-if echo "$content" | grep -q "Preinscripciones cerradas"; then
+# Buscamos la frase clave de forma nativa en Bash para evitar errores de Broken Pipe con grep -q
+if [[ "$content" == *"Preinscripciones cerradas"* ]]; then
   echo "Estado actual: Preinscripciones cerradas. Todo sigue igual."
   exit 0
 else
