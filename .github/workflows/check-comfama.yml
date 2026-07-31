@@ -1,9 +1,9 @@
 name: Check Comfama Registrations
 
 on:
-  schedule:
-    # Se ejecuta cada 6 horas
-    - cron: '0 */6 * * *'
+  # schedule:
+  #   # Se ejecuta cada 6 horas
+  #   - cron: '0 */6 * * *'
   workflow_dispatch: # Permite ejecutar el flujo manualmente desde GitHub Actions
 
 permissions:
