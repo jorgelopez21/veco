@@ -108,10 +108,10 @@ jobs:
       - name: Build
         run: npm run build
 
-  deploy:
-    name: Sync DB & Deploy
+  db-sync:
+    name: Sync Database Schema
     needs: build
-    # Solo desplegar si estamos en la rama main (ya sea push directo o merge de PR)
+    # Solo sincronizar DB si estamos en la rama main
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
@@ -132,10 +132,3 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           DIRECT_URL: ${{ secrets.DIRECT_URL }}
-
-      - name: Deploy to Vercel
-        run: npx vercel@latest deploy --prod --token ${{ secrets.VERCEL_TOKEN }} --yes
-        env:
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
-# CI verification
